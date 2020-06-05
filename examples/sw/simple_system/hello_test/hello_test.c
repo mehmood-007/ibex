@@ -4,7 +4,28 @@
 
 #include "simple_system_common.h"
 
-int main(int argc, char **argv) {
+int main() {
+  int a;
+  int b;
+  int c;
+ // char test;
+  //char hex[5];
+ // FILE *fp;
+  
+  a = 1;
+  b = 2; 
+  c = a + b;
+ 
+ // putchar( c + '0');
+  //fp = fopen(argv[1],"r");
+   
+ // while((fscanf(fp, "%d", &a) == 1) ) {
+//	    c++;
+ // }
+  
+  //sprintf(hex, "%x", c);
+  //puts(hex);
+/*
   pcount_enable(0);
   pcount_reset();
   pcount_enable(1);
@@ -36,6 +57,6 @@ int main(int argc, char **argv) {
     }
     asm volatile("wfi");
   }
-
+  */
   return 0;
 }

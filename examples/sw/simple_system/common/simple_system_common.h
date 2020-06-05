@@ -4,7 +4,9 @@
 
 #ifndef SIMPLE_SYSTEM_COMMON_H__
 
+#include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "simple_system_regs.h"
 

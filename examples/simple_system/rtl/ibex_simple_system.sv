@@ -16,7 +16,8 @@
 
 module ibex_simple_system (
   input IO_CLK,
-  input IO_RST_N
+  input IO_RST_N, 
+  output [31:0] reg_count [0:31]
 );
 
   parameter bit          PMPEnable       = 1'b0;
@@ -44,8 +45,9 @@ module ibex_simple_system (
   localparam NrDevices = 3;
   localparam NrHosts = 1;
 
+
   // interrupts
-  logic timer_irq;
+  logic timer_irq /*verilator public*/;
 
   // host and device signals
   logic           host_req    [NrHosts];
@@ -191,6 +193,8 @@ module ibex_simple_system (
       .fetch_enable_i        ('b1),
       .core_sleep_o          ()
     );
+
+  assign reg_count = u_core.u_ibex_core.register_file_i.reg_count;
 
   // SRAM block for instruction and data storage
   ram_2p #(

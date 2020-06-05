@@ -8,7 +8,7 @@ COMMON_SRCS = $(wildcard $(COMMON_DIR)/*.c)
 INCS := -I$(COMMON_DIR)
 
 # ARCH = rv32im # to disable compressed instructions
-ARCH ?= rv32imc
+ARCH ?= rv32imac
 
 ifdef PROGRAM
 PROGRAM_C := $(PROGRAM).c
@@ -19,15 +19,16 @@ SRCS = $(COMMON_SRCS) $(PROGRAM_C) $(EXTRA_SRCS)
 C_SRCS = $(filter %.c, $(SRCS))
 ASM_SRCS = $(filter %.S, $(SRCS))
 
-CC = riscv32-unknown-elf-gcc
+# CC = riscv32-unknown-elf-gcc
+CC = riscv32-unknown-linux-gnu-gcc
 
 OBJCOPY ?= $(subst gcc,objcopy,$(wordlist 1,1,$(CC)))
 OBJDUMP ?= $(subst gcc,objdump,$(wordlist 1,1,$(CC)))
 
 LINKER_SCRIPT ?= $(COMMON_DIR)/link.ld
 CRT ?= $(COMMON_DIR)/crt0.S
-CFLAGS ?= -march=$(ARCH) -mabi=ilp32 -static -mcmodel=medany -Wall -g -Os\
-	-fvisibility=hidden -nostdlib -nostartfiles -ffreestanding $(PROGRAM_CFLAGS)
+CFLAGS ?= -march=$(ARCH) -mabi=ilp32 -static -mcmodel=medany -Wall -g -O2\
+	-fvisibility=hidden -nostartfiles $(PROGRAM_CFLAGS)
 
 OBJS := ${C_SRCS:.c=.o} ${ASM_SRCS:.S=.o} ${CRT:.S=.o}
 DEPS = $(OBJS:%.o=%.d)
@@ -41,7 +42,7 @@ endif
 all: $(OUTFILES)
 
 $(PROGRAM).elf: $(OBJS) $(LINKER_SCRIPT)
-	$(CC) $(CFLAGS) -T $(LINKER_SCRIPT) $(OBJS) -o $@ $(LIBS)
+	$(CC) $(CFLAGS) -T $(LINKER_SCRIPT) $(OBJS) -lgcc -lm  -o $@ $(LIBS) 
 
 %.dis: %.elf
 	$(OBJDUMP) -fhSD $^ > $@
