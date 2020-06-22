@@ -26,6 +26,8 @@ extern "C" {
  */
 extern void simutil_verilator_memload(const char *file);
 
+//extern void simutil_verilator_memload(const char *file);
+
 /**
  * Write a 32 bit word |val| to memory at index |index|
  *

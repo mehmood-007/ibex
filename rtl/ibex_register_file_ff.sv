@@ -57,9 +57,10 @@ module ibex_register_file #(
     if (!rst_ni) begin
       rf_reg_tmp <= '{default:'0};
       reg_count <= '{default:'0};
+      reg_access <= 0;
     end else begin
       for (int r = 1; r < NUM_WORDS; r++) begin
-        if (we_a_dec[r]) begin 
+        if (we_a_dec[r]) begin
           rf_reg_tmp[r] <= wdata_a_i;
           reg_count[r] <= reg_count[r] + 1;
         end

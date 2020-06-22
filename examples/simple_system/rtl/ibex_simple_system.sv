@@ -73,8 +73,8 @@ module ibex_simple_system (
   // Device address mapping
   logic [31:0] cfg_device_addr_base [NrDevices];
   logic [31:0] cfg_device_addr_mask [NrDevices];
-  assign cfg_device_addr_base[Ram] = 32'h100000;
-  assign cfg_device_addr_mask[Ram] = ~32'hFFFFF; // 1 MB
+  assign cfg_device_addr_base[Ram] = 32'h200000;
+  assign cfg_device_addr_mask[Ram] = ~32'h1FFFFF; // 1 MB
   assign cfg_device_addr_base[SimCtrl] = 32'h20000;
   assign cfg_device_addr_mask[SimCtrl] = ~32'h3FF; // 1 kB
   assign cfg_device_addr_base[Timer] = 32'h30000;
@@ -94,8 +94,9 @@ module ibex_simple_system (
   `ifdef VERILATOR
     assign clk_sys = IO_CLK;
     assign rst_sys_n = IO_RST_N;
+     
   `else
-    initial begin
+    initial begin 
       rst_sys_n = 1'b0;
       #8
       rst_sys_n = 1'b1;
@@ -105,6 +106,10 @@ module ibex_simple_system (
       #1 clk_sys = 1'b1;
     end
   `endif
+
+initial begin
+  $display("Testing....");
+end
 
   // Tie-off unused error signals
   assign device_err[Ram] = 1'b0;
@@ -153,8 +158,8 @@ module ibex_simple_system (
       .BranchTargetALU          ( BranchTargetALU          ),
       .WritebackStage           ( WritebackStage           ),
       .MultiplierImplementation ( MultiplierImplementation ),
-      .DmHaltAddr               ( 32'h00100000             ),
-      .DmExceptionAddr          ( 32'h00100000             )
+      .DmHaltAddr               ( 32'h00200000             ),
+      .DmExceptionAddr          ( 32'h00200000             )
     ) u_core (
       .clk_i                 (clk_sys),
       .rst_ni                (rst_sys_n),
@@ -163,7 +168,7 @@ module ibex_simple_system (
 
       .hart_id_i             (32'b0),
       // First instruction executed is at 0x0 + 0x80
-      .boot_addr_i           (32'h00100000),
+      .boot_addr_i           (32'h00200000),
 
       .instr_req_o           (instr_req),
       .instr_gnt_i           (instr_gnt),
@@ -195,10 +200,28 @@ module ibex_simple_system (
     );
 
   assign reg_count = u_core.u_ibex_core.register_file_i.reg_count;
+  logic [31:0] cnt;  
+
+  always_ff @(posedge clk_sys or negedge rst_sys_n) begin
+    if (!rst_sys_n) begin
+        cnt <= '0;
+        clear_file("output.csv");
+    end
+    else begin
+      cnt <= cnt + 1;
+      for (int r = 1; r < 32; r++) begin
+        if( u_core.u_ibex_core.register_file_i.r_reg[r][5:0] == r )
+          log_stats(r, cnt, 1'b0);
+        else if ( u_core.u_ibex_core.register_file_i.w_reg[r][5:0] == r )
+          log_stats(r, cnt, 1'b1);
+      end
+    end
+  end
 
   // SRAM block for instruction and data storage
   ram_2p #(
-      .Depth(1024*1024/4)
+     // .Depth(1024*1024/4)
+     .Depth(1024*1024/2)
     ) u_ram (
       .clk_i       (clk_sys),
       .rst_ni      (rst_sys_n),
@@ -219,6 +242,20 @@ module ibex_simple_system (
       .b_rvalid_o  (instr_rvalid),
       .b_rdata_o   (instr_rdata)
     );
+
+    //Writing log to a file 
+    task log_stats(int test, int cnt_1, logic access);
+        integer f, i;
+        f = $fopen("output.csv","a");
+        $fwrite( f, "%0d,%0d,%0d\n", test, cnt_1, access );
+        $fclose(f);
+    endtask
+
+    task clear_file(string name);
+        integer f, i;
+        f = $fopen(name,"w");
+        $fclose(f);
+    endtask
 
   simulator_ctrl #(
     .LogName("ibex_simple_system.log")

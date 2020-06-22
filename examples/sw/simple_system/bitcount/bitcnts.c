@@ -18,14 +18,6 @@
 
 static int CDECL bit_shifter(long int x);
 
-int state = 777;
-
-int myRand()
-{
-   state = state * 1664525 + 1013904223;
-   return state >> 24;
-}
-
 int main(int argc, char **argv)
 {
   clock_t start, stop;
@@ -59,7 +51,7 @@ int main(int argc, char **argv)
     exit(-1);
 	}
   */
-  iterations=1000;
+  iterations=10240;
   
   //puts("Bit counter algorithm benchmark\n");
   

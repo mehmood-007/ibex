@@ -32,9 +32,10 @@ filesets:
       - rtl/ibex_dummy_instr.sv
       # XXX: Figure out the best way to switch these two implementations
       # dynamically on the target.
-#      - rtl/ibex_register_file_latch.sv # ASIC
-#      - rtl/ibex_register_file_fpga.sv # FPGA
-      - rtl/ibex_register_file_ff.sv # generic FF-based
+#     - rtl/ibex_register_file_latch.sv # ASIC
+#     - rtl/ibex_register_file_fpga.sv # FPGA
+#     - rtl/ibex_register_file_ff.sv # generic FF-based
+      - rtl/ibex_register_file_ff_level.sv # generic FF-based hierarchy based
       - rtl/ibex_core.sv
     file_type: systemVerilogSource
 

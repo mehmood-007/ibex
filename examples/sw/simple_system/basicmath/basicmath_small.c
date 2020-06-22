@@ -146,24 +146,21 @@ int main(int argc, char **argv)
 	  //printf("\n");
 	      }
       }
-    }
-  }
-  
+    }  
   //printf("********* INTEGER SQR ROOTS ***********\n");
   /* perform some integer square roots */
- // for (i = 0; i < 1001; ++i)
- //   {
-  //    usqrt(i, &q);
+  for (i = 0; i < 1001; ++i)
+    {
+      usqrt(i, &q);
 			// remainder differs on some machines
      // printf("sqrt(%3d) = %2d, remainder = %2d\n",
     // printf("sqrt(%3d) = %2d\n",
 	//     i, q.sqrt);
-  //  }
- // usqrt(l, &q);
+    }
+    usqrt(l, &q);
   //printf("\nsqrt(%lX) = %X, remainder = %X\n", l, q.sqrt, q.frac);
   //printf("\nsqrt(%lX) = %X\n", l, q.sqrt);
-
-
+  }
  // printf("********* ANGLE CONVERSION ***********\n");
   /* convert some rads to degrees */
   //for (X = 0.0; X <= 360.0; X += 1.0)

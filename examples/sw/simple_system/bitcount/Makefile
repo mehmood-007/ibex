@@ -5,10 +5,10 @@
 # Generate a baremetal application
 
 # Name of the program $(PROGRAM).c will be added as a source file
-PROGRAM = bitcnts
+PROGRAM = bitcnt_1
 PROGRAM_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 # Any extra source files to include in the build. Use the upper case .S
 # extension for assembly files
-EXTRA_SRCS := bitcnt_1.c bitcnt_2.c bitcnt_3.c bitcnt_4.c bitstrng.c bstr_i.c 
+EXTRA_SRCS := bitcnt_2.c bitcnt_3.c bitcnt_4.c bitcnts.c bitfiles.c bitstrng.c bstr_i.c  
 
 include ${PROGRAM_DIR}/../common/common.mk

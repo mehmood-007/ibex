@@ -7,10 +7,10 @@
 #include "simple_system_common.h"
 
 #define UNLIMIT
-#define MAXARRAY 120 /* this number, if too large, will cause a seg. fault!! */
+#define MAXARRAY 100 /* this number, if too large, will cause a seg. fault!! */
 
 struct myStringStruct {
-  char qstring[128];
+  char qstring[20];
 };
 
 int compare(const void *elem1, const void *elem2)
@@ -45,7 +45,8 @@ int main(int argc, char *argv[]) {
  // snprintf(array[0].qstring, 3, "%s", "sss");
  // strlcpy( test, array_1[0].qstring, 6);
   for( i = 0; i < MAXARRAY; i++ ){
-    strlcpy( array[i].qstring, INPUT_SMALL[i], 100);
+    
+    strlcpy( array[i].qstring, INPUT_SMALL[i], 20);
     count++;
   }
  // array[0].qstring[128 - 1] = '\0';
@@ -61,11 +62,11 @@ int main(int argc, char *argv[]) {
   //printf("\nSorting %d elements.\n\n",count);
 
   qsort(array, count, sizeof(struct myStringStruct), compare);
-    for( i=0; i < MAXARRAY ; i++ ){
+   // for( i=0; i < MAXARRAY ; i++ ){
     //puts(INPUT_SMALL[i]);
-    puts(array[i].qstring);
-    puts("\n");
-  }  
+  //  puts(array[i].qstring);
+  //  puts("\n");
+ // }  
    // printf("%s\n", array[i].qstring);
   return 0;
 }

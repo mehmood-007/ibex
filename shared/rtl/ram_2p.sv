@@ -44,11 +44,13 @@ module ram_2p #(
 
   logic [Aw-1:0] a_addr_idx;
   assign a_addr_idx = a_addr_i[Aw-1+2:2];
+ // assign a_addr_idx = a_addr_i[Aw-1:0];
   logic [31-Aw:0] unused_a_addr_parts;
   assign unused_a_addr_parts = {a_addr_i[31:Aw+2], a_addr_i[1:0]};
 
   logic [Aw-1:0] b_addr_idx;
-  assign b_addr_idx = b_addr_i[Aw-1+2:2];
+  assign b_addr_idx = b_addr_i[Aw+1:2];
+//  assign b_addr_idx = b_addr_i[Aw-1:0];
   logic [31-Aw:0] unused_b_addr_parts;
   assign unused_b_addr_parts = {b_addr_i[31:Aw+2], b_addr_i[1:0]};
 
@@ -103,8 +105,16 @@ module ram_2p #(
 
     task simutil_verilator_memload;
       input string file;
+      int j;
       $readmemh(file, mem);
+      for(j = 0; j<10;j++) begin
+        $display("%x => ", mem[j][31:0]);
+      end
     endtask
+
+   //export "DPI-C" function integer \$myRand;
+
+  // initial $display("myRand=%d", $myRand());
 
     // TODO: Allow 'val' to have other widths than 32 bit
     function int simutil_verilator_set_mem(input int index,

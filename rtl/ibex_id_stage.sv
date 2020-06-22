@@ -179,7 +179,10 @@ module ibex_id_stage #(
     output logic                      perf_mul_wait_o,
     output logic                      perf_div_wait_o,
     output logic                      instr_id_done_o,
-    output logic                      instr_id_done_compressed_o
+    output logic                      instr_id_done_compressed_o,
+
+    ///
+    input logic                       reg_access_i
 );
 
   import ibex_pkg::*;
