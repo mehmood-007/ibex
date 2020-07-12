@@ -602,7 +602,9 @@ module ibex_core #(
       .instr_id_done_compressed_o   ( instr_id_done_compressed ),
 
       // hierarchy 
-      .reg_access_i(reg_access)
+      .reg_access_i(reg_access),
+
+      .reg_stall_i(reg_stall)
   );
 
   // for RVFI only
@@ -762,7 +764,9 @@ module ibex_core #(
       .wdata_a_i        ( rf_wdata_wb    ),
       .we_a_i           ( rf_we_wb       ),
       // hierarchy
-      .reg_access_o(reg_access)
+      .reg_access_o(reg_access),
+
+      .reg_stall_o(reg_stall)
   );
 
   // Explict INC_ASSERT block to avoid unused signal lint warnings were asserts are not included

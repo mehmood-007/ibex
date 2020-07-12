@@ -82,10 +82,16 @@ ee_s32 parseval(char *valstring);
 
 /* Algorithm IDS */
 #define ID_LIST 	(1<<0)
+//#define ID_LIST 	0
+//#define ID_MATRIX 	0
+//#define ID_STATE 	0
+
 #define ID_MATRIX 	(1<<1)
 #define ID_STATE 	(1<<2)
+
 #define ALL_ALGORITHMS_MASK (ID_LIST|ID_MATRIX|ID_STATE)
 #define NUM_ALGORITHMS 3
+//#define NUM_ALGORITHMS 1
 
 /* list data structures */
 typedef struct list_data_s {

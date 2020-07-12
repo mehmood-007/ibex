@@ -169,7 +169,7 @@ MAIN_RETURN_TYPE main(int argc, char *argv[]) {
 		if ((1<<(ee_u32)i) & results[0].execs)
 			num_algorithms++;
 	}
-	for (i=0 ; i<MULTITHREAD; i++) 
+	for (i=0 ; i<MULTITHREAD; i++)
 		results[i].size=results[i].size/num_algorithms;
 	/* Assign pointers */
 	for (i=0; i<NUM_ALGORITHMS; i++) {

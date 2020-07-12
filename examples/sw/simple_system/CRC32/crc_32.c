@@ -208,7 +208,7 @@ main(int argc, char *argv[])
       register errors = 0;
 
       errors |= crc32file_1( &crc, &charcnt);
-      puthex( crc );
+      //puthex( crc );
      // printf("%08lX %7ld %s\n", crc, charcnt, *argv);
       return(errors != 0);
 }

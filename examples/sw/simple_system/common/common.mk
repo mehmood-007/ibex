@@ -19,15 +19,15 @@ SRCS = $(COMMON_SRCS) $(PROGRAM_C) $(EXTRA_SRCS)
 C_SRCS = $(filter %.c, $(SRCS))
 ASM_SRCS = $(filter %.S, $(SRCS))
 
-# CC = riscv32-unknown-elf-gcc
-CC = riscv32-unknown-linux-gnu-gcc
+CC = riscv32-unknown-elf-gcc
+#CC = riscv32-unknown-linux-gnu-gcc
 
 OBJCOPY ?= $(subst gcc,objcopy,$(wordlist 1,1,$(CC)))
 OBJDUMP ?= $(subst gcc,objdump,$(wordlist 1,1,$(CC)))
-#-Os
+#
 LINKER_SCRIPT ?= $(COMMON_DIR)/link.ld
 CRT ?= $(COMMON_DIR)/crt0.S
-CFLAGS ?= -march=$(ARCH) -mabi=ilp32 -static -mcmodel=medany -Wall -g \
+CFLAGS ?= -march=$(ARCH) -mabi=ilp32 -static -mcmodel=medany -Wall -g -O3\
 	-fvisibility=hidden -nostartfiles $(PROGRAM_CFLAGS)
 
 OBJS := ${C_SRCS:.c=.o} ${ASM_SRCS:.S=.o} ${CRT:.S=.o}

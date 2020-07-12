@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     exit(-1);
 	}
   */
-  iterations=10240;
+  iterations=2;
   
   //puts("Bit counter algorithm benchmark\n");
   

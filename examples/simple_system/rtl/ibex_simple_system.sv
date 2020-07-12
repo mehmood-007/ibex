@@ -209,10 +209,15 @@ end
     end
     else begin
       cnt <= cnt + 1;
-      for (int r = 1; r < 32; r++) begin
-        if( u_core.u_ibex_core.register_file_i.r_reg[r][5:0] == r )
-          log_stats(r, cnt, 1'b0);
-        else if ( u_core.u_ibex_core.register_file_i.w_reg[r][5:0] == r )
+      for (int r = 0; r < 32; r++) begin
+        if( u_core.u_ibex_core.register_file_i.r_reg[r][5:0] == r ) begin
+          if( u_core.u_ibex_core.register_file_i.w_reg[r][5:0] == r && r != 0) begin 
+            log_stats(r, cnt, 1'b0); log_stats(r, cnt, 1'b1); 
+          end
+          else
+            log_stats(r, cnt, 1'b0);  
+        end
+        else if ( u_core.u_ibex_core.register_file_i.w_reg[r][5:0] == r && r != 0)
           log_stats(r, cnt, 1'b1);
       end
     end

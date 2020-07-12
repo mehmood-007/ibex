@@ -7,7 +7,7 @@
 #include "simple_system_common.h"
 
 #define UNLIMIT
-#define MAXARRAY 100 /* this number, if too large, will cause a seg. fault!! */
+#define MAXARRAY 50 /* this number, if too large, will cause a seg. fault!! */
 
 struct myStringStruct {
   char qstring[20];

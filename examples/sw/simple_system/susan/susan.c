@@ -423,7 +423,7 @@ FILE  *fd;
 #else
   if ((fd=fopen(filename,"w")) == NULL) 
 #endif
-    exit_error("Can't output image%s.\n",filename);
+    exit_error("Can't output image %s.\n",filename);
 
   fprintf(fd,"P5\n");
   fprintf(fd,"%d %d\n",x_size,y_size);

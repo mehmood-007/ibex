@@ -37,13 +37,22 @@ module ibex_register_file #(
     input  logic                 we_a_i,
 
     // hierarchy
-    output logic reg_access_o
+    output logic reg_access_o,
+
+    // reg stall
+    output logic reg_stall_o
 
 );
   logic [31:0] reg_count [0:NUM_WORDS-1];
-  logic [5:0] r_reg [0:NUM_WORDS-1];
-  logic [5:0] w_reg [0:NUM_WORDS-1];
   
+  logic [NUM_WORDS-1:0][5:0] r_reg;
+  logic [NUM_WORDS-1:0][5:0] _r_reg;
+  logic [NUM_WORDS-1:1][5:0] w_reg;
+  
+  logic [31:0]  reg_stall;
+  logic [31:0]  reg_stall_;
+  
+
   localparam int unsigned ADDR_WIDTH = RV32E ? 4 : 5;
   localparam int unsigned NUM_WORDS  = 2**ADDR_WIDTH;
 
@@ -56,7 +65,7 @@ module ibex_register_file #(
 
   always_comb begin : we_a_decoder
     for (int unsigned i = 1; i < NUM_WORDS; i++) begin
-      we_a_dec[i] = (waddr_a_i == 5'(i)) ?  we_a_i : 1'b0;
+      we_a_dec[i] = (waddr_a_i == 5'(i) && reg_stall_o == 0)  ?  we_a_i : 1'b0;
     end
   end
 
@@ -76,26 +85,64 @@ module ibex_register_file #(
     if (!rst_ni) begin
       rf_reg_tmp <= '{default:'0};
       reg_count <= '{default:'0};
-      r_reg <= '{default:6'h3f};
+      //_r_reg <= '{default:6'h3f};
       w_reg <= '{default:6'h3f};
+      reg_stall_ <= '{default:'0};
     end else begin
       for (int r = 1; r < NUM_WORDS; r++) begin
         if (we_a_dec[r]) begin
           rf_reg_tmp[r] <= wdata_a_i;
           reg_count[r] <= reg_count[r] + 1;
           w_reg[r] <= r;
-          r_reg[r] <= 6'h3f;
+         // _r_reg[r] <= 6'h3f;
         end
         else begin
-          if( temp_addr_a != raddr_a_i || temp_addr_b != raddr_b_i )
-            r_reg[r] <= (raddr_a_i == 5'(r) || raddr_b_i == 5'(r)) ? r : 6'h3f;
-            w_reg[r] <= 6'h3f;
-            //r_reg_count[r] <= (raddr_a_i == 5'(r) || raddr_b_i == 5'(r)) ? (r_reg_count[r] + 1) : r_reg_count[r];
+          w_reg[r] <= 6'h3f;
+         // if( temp_addr_a != raddr_a_i || temp_addr_b != raddr_b_i ) begin
+           // _r_reg[r] <= (raddr_a_i == 5'(r) || raddr_b_i == 5'(r)) ? r : 6'h3f;
+          //  w_reg[r] <= 6'h3f;
+          //end
         end
+        reg_stall_[r] <= reg_stall[r];
       end
     end
   end
+    // r_reg_count[r] <= (raddr_a_i == 5'(r) || raddr_b_i == 5'(r)) ? (r_reg_count[r] + 1) : r_reg_count[r];
 
+always @(raddr_a_i or raddr_b_i) begin
+    for ( integer i = 0; i < NUM_WORDS; i++ ) begin: test
+      if( temp_addr_a != raddr_a_i || temp_addr_b != raddr_b_i )  begin
+        if ( (raddr_a_i == 5'(i) || raddr_b_i == 5'(i)) ) begin
+            reg_stall[i] = 0; //? 0 : 0;
+        end
+        else begin
+            reg_stall[i] = reg_stall_[i];
+        end
+      end
+      else begin
+        reg_stall[i] = 0;
+      end
+  end
+end
+
+always @(raddr_a_i or raddr_b_i) begin
+  for ( integer i = 0; i < NUM_WORDS; i++ ) begin: test
+    if ( (raddr_a_i == 5'(i) || raddr_b_i == 5'(i)) ) begin
+        _r_reg[i] = i;
+    end
+    else begin
+        _r_reg[i] = 6'h3f;
+    end
+  end
+end
+
+/*
+  if( condition == 1) begin
+  genvar i;
+      for ( i = 1; i < NUM_WORDS; i++) begin
+          
+      end
+  end */
   // With dummy instructions enabled, R0 behaves as a real register but will always return 0 for
   // real instructions.
   if (DummyInstructions) begin : g_dummy_r0
@@ -126,8 +173,16 @@ module ibex_register_file #(
 
   assign rf_reg[NUM_WORDS-1:1] = rf_reg_tmp[NUM_WORDS-1:1];
 
-  assign rdata_a_o = rf_reg[raddr_a_i];
-  assign rdata_b_o = rf_reg[raddr_b_i];
+  //assign reg_count[31:1] = _reg_count[31:1];
+
+//  assign r_reg[0] = (raddr_a_i == 5'(0)  || raddr_b_i == 5'(0) ) ? 6'h00 : 6'h3f;
+ // assign r_reg[NUM_WORDS-1:1] = _r_reg[NUM_WORDS-1:1];
+
+  assign r_reg[NUM_WORDS-1:0] = _r_reg[NUM_WORDS-1:0];
+
+  assign rdata_a_o =  rf_reg[raddr_a_i];
+  assign rdata_b_o =  rf_reg[raddr_b_i];
   assign reg_access_o = reg_access;
+  assign reg_stall_o = |reg_stall ;
 
 endmodule

@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
 	unsigned MAXWAVES;
 	unsigned i,j;
 
-	MAXSIZE = 4096;
+	MAXSIZE = 128;
 	MAXWAVES = 1;
 
 	float RealIn[MAXSIZE];

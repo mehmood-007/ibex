@@ -182,7 +182,9 @@ module ibex_id_stage #(
     output logic                      instr_id_done_compressed_o,
 
     ///
-    input logic                       reg_access_i
+    input logic                       reg_access_i,
+
+    input logic                       reg_stall_i
 );
 
   import ibex_pkg::*;
@@ -219,6 +221,8 @@ module ibex_id_stage #(
   logic        flush_id;
   logic        multicycle_done;
 
+
+
   // Immediate decoding and sign extension
   logic [31:0] imm_i_type;
   logic [31:0] imm_s_type;
@@ -235,6 +239,10 @@ module ibex_id_stage #(
   rf_wd_sel_e  rf_wdata_sel;
   logic        rf_we_dec, rf_we_raw;
   logic        rf_ren_a, rf_ren_b;
+
+// register stall test
+  logic        stall_register;
+
 
 `ifdef RVFI
   assign rf_ren_a_o = rf_ren_a;
@@ -716,6 +724,7 @@ module ibex_id_stage #(
     branch_spec             = 1'b0;
     jump_set                = 1'b0;
     perf_branch_o           = 1'b0;
+    stall_register          = 1'b0;
 
     if (instr_executing) begin
       unique case (id_fsm_q)
@@ -729,6 +738,10 @@ module ibex_id_stage #(
                 if(~lsu_req_done_i) begin
                   id_fsm_d  = MULTI_CYCLE;
                 end
+              end
+              if(reg_stall_i) begin
+                stall_register = 1'b1;
+                id_fsm_d = MULTI_CYCLE;
               end
             end
             multdiv_en_dec: begin
@@ -765,6 +778,10 @@ module ibex_id_stage #(
               id_fsm_d      = MULTI_CYCLE;
               rf_we_raw     = 1'b0;
             end
+            reg_stall_i: begin
+              stall_register = 1'b1;
+              id_fsm_d       = MULTI_CYCLE;
+            end
             default: begin
               id_fsm_d      = FIRST_CYCLE;
             end
@@ -782,6 +799,7 @@ module ibex_id_stage #(
             stall_multdiv   = multdiv_en_dec;
             stall_branch    = branch_in_dec;
             stall_jump      = jump_in_dec;
+            stall_register  = reg_stall_i;
           end
         end
 
@@ -799,7 +817,7 @@ module ibex_id_stage #(
 
   // Stall ID/EX stage for reason that relates to instruction in ID/EX
   assign stall_id = stall_ld_hz | stall_mem | stall_multdiv | stall_jump | stall_branch |
-                      stall_alu;
+                      stall_alu | stall_register;
 
   assign instr_done = ~stall_id & ~flush_id & instr_executing;
 

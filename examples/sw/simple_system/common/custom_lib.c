@@ -37,6 +37,7 @@ int intToStr(int x, char str[], int d)
 } 
   
 // Converts a floating-point/double number to a string. 
+/*
 void ftoa(float n, char* res, int afterpoint) 
 { 
     // Extract integer part 
@@ -60,7 +61,7 @@ void ftoa(float n, char* res, int afterpoint)
         intToStr((int)fpart, res + i + 1, afterpoint); 
     } 
 } 
-
+*/
 int myRand()
 {
    state = state * 1664525 + 1013904223;
