@@ -1,0 +1,534 @@
+Log file: /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/logs/speed-2020-07-23-141356.log
+
+
+Supplied arguments
+==================
+--builddir            : bd
+--logdir              : logs
+--absolute            : False
+--target-module       : run_verilator_sim
+
+Benchmarks
+==========
+aha-mont64
+crc32
+edn
+huffbench
+matmult-int
+minver
+nbody
+nettle-aes
+nettle-sha256
+nsichneu
+picojpeg
+qrduino
+sglib-combined
+slre
+st
+statemate
+ud
+wikisort
+
+Benchmark           Speed
+---------           -----
+Running benchmark: aha-mont64
+Looking for aha-mont64 results in /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/bd/src/aha-mont64/ibex_simple_system_pcount.csv
+Args to subprocess:
+	- /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/../../../../build/lowrisc_ibex_ibex_simple_system_0/sim-verilator/Vibex_simple_system
+	- --raminit=aha-mont64.vmem
+Simulation of Ibex
+==================
+
+0840006f => 
+0800006f => 
+07c0006f => 
+0780006f => 
+0740006f => 
+0700006f => 
+06c0006f => 
+06c0006f => 
+0640006f => 
+0600006f => 
+Tracing can be toggled by sending SIGUSR1 to this process:
+$ kill -USR1 190871
+
+Simulation running, end by pressing CTRL-c.
+Terminating simulation by software request.
+- ../src/lowrisc_ibex_sim_shared_0/./rtl/sim/simulator_ctrl.sv:92: Verilog $finish
+Received $finish() from Verilog, shutting down simulation.
+
+Simulation statistics
+=====================
+Executed cycles:  4727789
+Wallclock time:   30.357 s
+Simulation speed: 155740 cycles/s (155.74 kHz)
+
+Performance Counters
+====================
+Cycles:                     4712036
+NONE:                       0
+Instructions Retired:       3444801
+LSU Busy:                   9205
+Fetch Wait:                 458834
+Loads:                      6971
+Stores:                     2234
+Jumps:                      4114
+Conditional Branches:       348865
+Taken Conditional Branches: 263859
+Compressed Instructions:    1241936
+Multiply Wait:              62272
+Divide Wait:                0
+
+
+aha-mont64           1.18
+Running benchmark: crc32
+Looking for crc32 results in /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/bd/src/crc32/ibex_simple_system_pcount.csv
+Args to subprocess:
+	- /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/../../../../build/lowrisc_ibex_ibex_simple_system_0/sim-verilator/Vibex_simple_system
+	- --raminit=crc32.vmem
+Simulation of Ibex
+==================
+
+0840006f => 
+0800006f => 
+07c0006f => 
+0780006f => 
+0740006f => 
+0700006f => 
+06c0006f => 
+06c0006f => 
+0640006f => 
+0600006f => 
+Tracing can be toggled by sending SIGUSR1 to this process:
+$ kill -USR1 190874
+
+Simulation running, end by pressing CTRL-c.
+Terminating simulation by software request.
+- ../src/lowrisc_ibex_sim_shared_0/./rtl/sim/simulator_ctrl.sv:92: Verilog $finish
+Received $finish() from Verilog, shutting down simulation.
+
+Simulation statistics
+=====================
+Executed cycles:  5389164
+Wallclock time:   31.01 s
+Simulation speed: 173788 cycles/s (173.788 kHz)
+
+Performance Counters
+====================
+Cycles:                     5351561
+NONE:                       0
+Instructions Retired:       3567027
+LSU Busy:                   446753
+Fetch Wait:                 297105
+Loads:                      297543
+Stores:                     149210
+Jumps:                      297546
+Conditional Branches:       148626
+Taken Conditional Branches: 148479
+Compressed Instructions:    2378167
+Multiply Wait:              296960
+Divide Wait:                0
+
+
+crc32                1.33
+Running benchmark: edn
+Looking for edn results in /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/bd/src/edn/ibex_simple_system_pcount.csv
+Args to subprocess:
+	- /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/../../../../build/lowrisc_ibex_ibex_simple_system_0/sim-verilator/Vibex_simple_system
+	- --raminit=edn.vmem
+Simulation of Ibex
+==================
+
+0840006f => 
+0800006f => 
+07c0006f => 
+0780006f => 
+0740006f => 
+0700006f => 
+06c0006f => 
+06c0006f => 
+0640006f => 
+0600006f => 
+Tracing can be toggled by sending SIGUSR1 to this process:
+$ kill -USR1 190878
+
+Simulation running, end by pressing CTRL-c.
+Terminating simulation by software request.
+- ../src/lowrisc_ibex_sim_shared_0/./rtl/sim/simulator_ctrl.sv:92: Verilog $finish
+Received $finish() from Verilog, shutting down simulation.
+
+Simulation statistics
+=====================
+Executed cycles:  5798551
+Wallclock time:   29.908 s
+Simulation speed: 193880 cycles/s (193.88 kHz)
+
+Performance Counters
+====================
+Cycles:                     5719928
+NONE:                       0
+Instructions Retired:       2971508
+LSU Busy:                   865361
+Fetch Wait:                 562103
+Loads:                      774402
+Stores:                     90959
+Jumps:                      776
+Conditional Branches:       316702
+Taken Conditional Branches: 307845
+Compressed Instructions:    1215772
+Multiply Wait:              989142
+Divide Wait:                0
+
+
+edn                  1.44
+Running benchmark: huffbench
+Looking for huffbench results in /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/bd/src/huffbench/ibex_simple_system_pcount.csv
+Args to subprocess:
+	- /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/../../../../build/lowrisc_ibex_ibex_simple_system_0/sim-verilator/Vibex_simple_system
+	- --raminit=huffbench.vmem
+Simulation of Ibex
+==================
+
+0840006f => 
+0800006f => 
+07c0006f => 
+0780006f => 
+0740006f => 
+0700006f => 
+06c0006f => 
+06c0006f => 
+0640006f => 
+0600006f => 
+Tracing can be toggled by sending SIGUSR1 to this process:
+$ kill -USR1 190883
+
+Simulation running, end by pressing CTRL-c.
+Terminating simulation by software request.
+- ../src/lowrisc_ibex_sim_shared_0/./rtl/sim/simulator_ctrl.sv:92: Verilog $finish
+Received $finish() from Verilog, shutting down simulation.
+
+Simulation statistics
+=====================
+Executed cycles:  2015708
+Wallclock time:   11.18 s
+Simulation speed: 180296 cycles/s (180.296 kHz)
+
+Performance Counters
+====================
+Cycles:                     1847896
+NONE:                       0
+Instructions Retired:       1125335
+LSU Busy:                   245822
+Fetch Wait:                 236016
+Loads:                      200382
+Stores:                     45440
+Jumps:                      14634
+Conditional Branches:       202777
+Taken Conditional Branches: 137543
+Compressed Instructions:    608679
+Multiply Wait:              0
+Divide Wait:                0
+
+
+huffbench            0.45
+Running benchmark: matmult-int
+Looking for matmult-int results in /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/bd/src/matmult-int/ibex_simple_system_pcount.csv
+Args to subprocess:
+	- /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/../../../../build/lowrisc_ibex_ibex_simple_system_0/sim-verilator/Vibex_simple_system
+	- --raminit=matmult-int.vmem
+Simulation of Ibex
+==================
+
+0840006f => 
+0800006f => 
+07c0006f => 
+0780006f => 
+0740006f => 
+0700006f => 
+06c0006f => 
+06c0006f => 
+0640006f => 
+0600006f => 
+Tracing can be toggled by sending SIGUSR1 to this process:
+$ kill -USR1 190884
+
+Simulation running, end by pressing CTRL-c.
+Terminating simulation by software request.
+- ../src/lowrisc_ibex_sim_shared_0/./rtl/sim/simulator_ctrl.sv:92: Verilog $finish
+Received $finish() from Verilog, shutting down simulation.
+
+Simulation statistics
+=====================
+Executed cycles:  6231652
+Wallclock time:   30.298 s
+Simulation speed: 205679 cycles/s (205.679 kHz)
+
+Performance Counters
+====================
+Cycles:                     6048973
+NONE:                       0
+Instructions Retired:       3236273
+LSU Busy:                   1222018
+Fetch Wait:                 398747
+Loads:                      789608
+Stores:                     432410
+Jumps:                      382
+Conditional Branches:       400864
+Taken Conditional Branches: 380417
+Compressed Instructions:    1957252
+Multiply Wait:              752000
+Divide Wait:                0
+
+
+matmult-int          1.50
+Running benchmark: minver
+Looking for minver results in /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/bd/src/minver/ibex_simple_system_pcount.csv
+Args to subprocess:
+	- /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/../../../../build/lowrisc_ibex_ibex_simple_system_0/sim-verilator/Vibex_simple_system
+	- --raminit=minver.vmem
+Simulation of Ibex
+==================
+
+0840006f => 
+0800006f => 
+07c0006f => 
+0780006f => 
+0740006f => 
+0700006f => 
+06c0006f => 
+06c0006f => 
+0640006f => 
+0600006f => 
+Tracing can be toggled by sending SIGUSR1 to this process:
+$ kill -USR1 190887
+
+Simulation running, end by pressing CTRL-c.
+Terminating simulation by software request.
+- ../src/lowrisc_ibex_sim_shared_0/./rtl/sim/simulator_ctrl.sv:92: Verilog $finish
+Received $finish() from Verilog, shutting down simulation.
+
+Simulation statistics
+=====================
+Executed cycles:  5592035
+Wallclock time:   31.079 s
+Simulation speed: 179930 cycles/s (179.93 kHz)
+
+Performance Counters
+====================
+Cycles:                     5573660
+NONE:                       0
+Instructions Retired:       2982753
+LSU Busy:                   489240
+Fetch Wait:                 365189
+Loads:                      262221
+Stores:                     227019
+Jumps:                      131935
+Conditional Branches:       411580
+Taken Conditional Branches: 215494
+Compressed Instructions:    1649963
+Multiply Wait:              81592
+Divide Wait:                758016
+
+
+minver               1.39
+Running benchmark: nbody
+Looking for nbody results in /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/bd/src/nbody/ibex_simple_system_pcount.csv
+Args to subprocess:
+	- /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/../../../../build/lowrisc_ibex_ibex_simple_system_0/sim-verilator/Vibex_simple_system
+	- --raminit=nbody.vmem
+Simulation of Ibex
+==================
+
+0840006f => 
+0800006f => 
+07c0006f => 
+0780006f => 
+0740006f => 
+0700006f => 
+06c0006f => 
+06c0006f => 
+0640006f => 
+0600006f => 
+Tracing can be toggled by sending SIGUSR1 to this process:
+$ kill -USR1 190891
+
+Simulation running, end by pressing CTRL-c.
+Terminating simulation by software request.
+- ../src/lowrisc_ibex_sim_shared_0/./rtl/sim/simulator_ctrl.sv:92: Verilog $finish
+Received $finish() from Verilog, shutting down simulation.
+
+Simulation statistics
+=====================
+Executed cycles:  9978026
+Wallclock time:   57.952 s
+Simulation speed: 172177 cycles/s (172.177 kHz)
+
+Performance Counters
+====================
+Cycles:                     4990150
+NONE:                       0
+Instructions Retired:       3132818
+LSU Busy:                   268856
+Fetch Wait:                 350148
+Loads:                      145950
+Stores:                     122906
+Jumps:                      70643
+Conditional Branches:       370884
+Taken Conditional Branches: 186307
+Compressed Instructions:    1588229
+Multiply Wait:              232840
+Divide Wait:                292320
+
+
+nbody                1.32
+Running benchmark: nettle-aes
+Looking for nettle-aes results in /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/bd/src/nettle-aes/ibex_simple_system_pcount.csv
+Args to subprocess:
+	- /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/../../../../build/lowrisc_ibex_ibex_simple_system_0/sim-verilator/Vibex_simple_system
+	- --raminit=nettle-aes.vmem
+Simulation of Ibex
+==================
+
+0840006f => 
+0800006f => 
+07c0006f => 
+0780006f => 
+0740006f => 
+0700006f => 
+06c0006f => 
+06c0006f => 
+0640006f => 
+0600006f => 
+Tracing can be toggled by sending SIGUSR1 to this process:
+$ kill -USR1 190899
+
+Simulation running, end by pressing CTRL-c.
+Terminating simulation by software request.
+- ../src/lowrisc_ibex_sim_shared_0/./rtl/sim/simulator_ctrl.sv:92: Verilog $finish
+Received $finish() from Verilog, shutting down simulation.
+
+Simulation statistics
+=====================
+Executed cycles:  5428217
+Wallclock time:   32.457 s
+Simulation speed: 167243 cycles/s (167.243 kHz)
+
+Performance Counters
+====================
+Cycles:                     5338174
+NONE:                       0
+Instructions Retired:       3695393
+LSU Busy:                   742064
+Fetch Wait:                 142493
+Loads:                      690702
+Stores:                     51362
+Jumps:                      1062
+Conditional Branches:       65143
+Taken Conditional Branches: 40589
+Compressed Instructions:    1230015
+Multiply Wait:              0
+Divide Wait:                247104
+
+
+nettle-aes           1.34
+Running benchmark: nettle-sha256
+Looking for nettle-sha256 results in /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/bd/src/nettle-sha256/ibex_simple_system_pcount.csv
+Args to subprocess:
+	- /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/../../../../build/lowrisc_ibex_ibex_simple_system_0/sim-verilator/Vibex_simple_system
+	- --raminit=nettle-sha256.vmem
+Simulation of Ibex
+==================
+
+0840006f => 
+0800006f => 
+07c0006f => 
+0780006f => 
+0740006f => 
+0700006f => 
+06c0006f => 
+06c0006f => 
+0640006f => 
+0600006f => 
+Tracing can be toggled by sending SIGUSR1 to this process:
+$ kill -USR1 190902
+
+Simulation running, end by pressing CTRL-c.
+Terminating simulation by software request.
+- ../src/lowrisc_ibex_sim_shared_0/./rtl/sim/simulator_ctrl.sv:92: Verilog $finish
+Received $finish() from Verilog, shutting down simulation.
+
+Simulation statistics
+=====================
+Executed cycles:  23602764
+Wallclock time:   164.323 s
+Simulation speed: 143636 cycles/s (143.636 kHz)
+
+Performance Counters
+====================
+Cycles:                     23602760
+NONE:                       0
+Instructions Retired:       21564778
+LSU Busy:                   1124251
+Fetch Wait:                 702607
+Loads:                      1124028
+Stores:                     223
+Jumps:                      50
+Conditional Branches:       70416
+Taken Conditional Branches: 70381
+Compressed Instructions:    4425808
+Multiply Wait:              0
+Divide Wait:                0
+
+
+nettle-sha256        5.90
+Running benchmark: nsichneu
+Looking for nsichneu results in /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/bd/src/nsichneu/ibex_simple_system_pcount.csv
+Args to subprocess:
+	- /home/mehmood/ibex/examples/sw/benchmarks/embench-iot/../../../../build/lowrisc_ibex_ibex_simple_system_0/sim-verilator/Vibex_simple_system
+	- --raminit=nsichneu.vmem
+Simulation of Ibex
+==================
+
+0840006f => 
+0800006f => 
+07c0006f => 
+0780006f => 
+0740006f => 
+0700006f => 
+06c0006f => 
+06c0006f => 
+0640006f => 
+0600006f => 
+Tracing can be toggled by sending SIGUSR1 to this process:
+$ kill -USR1 190921
+
+Simulation running, end by pressing CTRL-c.
+Terminating simulation by software request.
+- ../src/lowrisc_ibex_sim_shared_0/./rtl/sim/simulator_ctrl.sv:92: Verilog $finish
+Received $finish() from Verilog, shutting down simulation.
+
+Simulation statistics
+=====================
+Executed cycles:  979426
+Wallclock time:   4.479 s
+Simulation speed: 218671 cycles/s (218.671 kHz)
+
+Performance Counters
+====================
+Cycles:                     977850
+NONE:                       0
+Instructions Retired:       417209
+LSU Busy:                   209248
+Fetch Wait:                 175029
+Loads:                      205297
+Stores:                     3951
+Jumps:                      15798
+Conditional Branches:       190821
+Taken Conditional Branches: 159236
+Compressed Instructions:    1334
+Multiply Wait:              0
+Divide Wait:                0
+
+
+nsichneu             0.24
+Running benchmark: picojpeg

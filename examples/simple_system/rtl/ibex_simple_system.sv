@@ -17,7 +17,9 @@
 module ibex_simple_system (
   input IO_CLK,
   input IO_RST_N, 
-  output [31:0] reg_count [0:31]
+  output [31:0] reg_count [0:31],
+  output [31:0] cache_hit_count,
+  output [31:0] cache_miss_count   
 );
 
   parameter bit          PMPEnable       = 1'b0;
@@ -108,7 +110,7 @@ module ibex_simple_system (
   `endif
 
 initial begin
-  $display("Testing....");
+  //$display("Testing....");
 end
 
   // Tie-off unused error signals
@@ -199,9 +201,28 @@ end
       .core_sleep_o          ()
     );
 
-  assign reg_count = u_core.u_ibex_core.register_file_i.reg_count;
-  logic [31:0] cnt;  
+ // assign reg_count[0] = u_core.u_ibex_core.register_file_i.cache_hit_count;//u_core.u_ibex_core.register_file_i.reg_count;
 
+// assign reg_count[1]  = u_core.u_ibex_core.register_file_i.cache_miss_count;
+  
+  logic [31:0] cnt;  
+  integer file_handle;
+  integer file;
+
+/*
+  always_ff @(posedge clk_sys or negedge rst_sys_n) begin
+    if (!rst_sys_n) begin
+        file = $fopen("hit_cnt.csv","w");
+        $fclose(file);
+        file = $fopen("hit_cnt.csv","w");
+    end
+    else begin
+       $fwrite( file, "%d,%d\n", u_core.u_ibex_core.register_file_i.cache_hit_count, u_core.u_ibex_core.register_file_i.cache_miss_count );
+    end
+  end
+*/
+
+/*
   always_ff @(posedge clk_sys or negedge rst_sys_n) begin
     if (!rst_sys_n) begin
         cnt <= '0;
@@ -222,7 +243,7 @@ end
       end
     end
   end
-
+*/
   // SRAM block for instruction and data storage
   ram_2p #(
      // .Depth(1024*1024/4)
@@ -249,17 +270,16 @@ end
     );
 
     //Writing log to a file 
-    task log_stats(int test, int cnt_1, logic access);
-        integer f, i;
-        f = $fopen("output.csv","a");
-        $fwrite( f, "%0d,%0d,%0d\n", test, cnt_1, access );
-        $fclose(f);
+    task log_stats(  int test, int cnt_1, logic access);
+        $fwrite( file_handle, "%0d,%0d,%0d\n", test, cnt_1, access );
+       // $fclose(f);
     endtask
 
     task clear_file(string name);
-        integer f, i;
+        integer f;
         f = $fopen(name,"w");
         $fclose(f);
+        file_handle = $fopen(name,"a");
     endtask
 
   simulator_ctrl #(

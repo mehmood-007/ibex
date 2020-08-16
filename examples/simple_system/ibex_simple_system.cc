@@ -45,10 +45,14 @@ int main(int argc, char **argv) {
   std::ofstream pcount_csv("ibex_simple_system_pcount.csv");
   pcount_csv << ibex_pcount_string(true);
 
-  std::ofstream regcount_csv("regcount.csv");
-  for(int j = 1 ; j <= 31; j++){
-    regcount_csv << "X" << j << "," << top.dut().reg_count[j]<< std::endl;
-  }
+  //std::ofstream regcount_csv("regcount.csv");
+  //for(int j = 1 ; j <= 31; j++){
+  //  regcount_csv << "X" << j << "," << top.dut().reg_count[j]<< std::endl;
+  //}
+
+  std::ofstream cachehitcnt_csv("hitcount.csv");
+    cachehitcnt_csv <<  top.dut().reg_count[0] << "," << top.dut().reg_count[1] << std::endl;
+
   //std::cout << "X31 register hit -> " << top.dut().reg_count[31] << std::endl;
   return 0;
 }

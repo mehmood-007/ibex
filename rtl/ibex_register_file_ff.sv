@@ -53,6 +53,7 @@ module ibex_register_file #(
   end
 
   // loop from 1 to NUM_WORDS-1 as R0 is nil
+/*
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       rf_reg_tmp <= '{default:'0};
@@ -70,6 +71,7 @@ module ibex_register_file #(
       end
     end
   end
+*/
 
   // With dummy instructions enabled, R0 behaves as a real register but will always return 0 for
   // real instructions.

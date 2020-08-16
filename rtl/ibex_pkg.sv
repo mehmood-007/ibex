@@ -24,7 +24,8 @@ typedef enum logic [6:0] {
   OPCODE_BRANCH   = 7'h63,
   OPCODE_JALR     = 7'h67,
   OPCODE_JAL      = 7'h6f,
-  OPCODE_SYSTEM   = 7'h73
+  OPCODE_SYSTEM   = 7'h73,
+  OPCODE_STALL    = 7'h7f
 } opcode_e;
 
 

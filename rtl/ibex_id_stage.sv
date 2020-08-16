@@ -184,7 +184,9 @@ module ibex_id_stage #(
     ///
     input logic                       reg_access_i,
 
-    input logic                       reg_stall_i
+    input logic                       reg_stall_i,
+
+    input logic                       write_stall_i
 );
 
   import ibex_pkg::*;
@@ -223,6 +225,7 @@ module ibex_id_stage #(
 
 
 
+
   // Immediate decoding and sign extension
   logic [31:0] imm_i_type;
   logic [31:0] imm_s_type;
@@ -242,6 +245,10 @@ module ibex_id_stage #(
 
 // register stall test
   logic        stall_register;
+
+  logic[3:0] counter;
+  logic reg_stall_;
+  logic stall_register_;
 
 
 `ifdef RVFI
@@ -280,6 +287,14 @@ module ibex_id_stage #(
   logic        lsu_sign_ext;
   logic        lsu_req, lsu_req_dec;
   logic        data_req_allowed;
+
+ // Data Memory Control stall
+  logic        lsu_we_t;
+  logic [1:0]  lsu_type_t;
+  logic        lsu_sign_ext_t;
+  logic        lsu_req_t, lsu_req_dec_t;
+  logic        data_req_allowed_t;
+
 
   // CSR control
   logic        csr_pipe_flush;
@@ -482,7 +497,9 @@ module ibex_id_stage #(
 
       // jump/branches
       .jump_in_dec_o                   ( jump_in_dec          ),
-      .branch_in_dec_o                 ( branch_in_dec        )
+      .branch_in_dec_o                 ( branch_in_dec        ),
+
+      .reg_stall_i(reg_stall_i)
   );
 
   /////////////////////////////////
@@ -609,14 +626,25 @@ module ibex_id_stage #(
   assign multdiv_en_dec   = mult_en_dec | div_en_dec;
 
   assign lsu_req         = instr_executing ? data_req_allowed & lsu_req_dec  : 1'b0;
+
   assign mult_en_id      = instr_executing ? mult_en_dec                     : 1'b0;
   assign div_en_id       = instr_executing ? div_en_dec                      : 1'b0;
+
+/*
+  assign lsu_req_o               = lsu_req_t;
+  assign lsu_we_o                = lsu_we_t;
+  assign lsu_type_o              = lsu_type_t;
+  assign lsu_sign_ext_o          = lsu_sign_ext_t;
+  assign lsu_wdata_o             = rf_rdata_b_fwd_t;
+*/
 
   assign lsu_req_o               = lsu_req;
   assign lsu_we_o                = lsu_we;
   assign lsu_type_o              = lsu_type;
   assign lsu_sign_ext_o          = lsu_sign_ext;
   assign lsu_wdata_o             = rf_rdata_b_fwd;
+
+
   // csr_op_en_o is set when CSR access should actually happen.
   // csv_access_o is set when CSR access instruction is present and is used to compute whether a CSR
   // access is illegal. A combinational loop would be created if csr_op_en_o was used along (as
@@ -708,6 +736,32 @@ module ibex_id_stage #(
     end
   end
 
+/*
+  always_ff @(posedge clk_i or negedge rst_ni) begin 
+    if (!rst_ni) begin
+      reg_stall_ <= '0;
+      counter <= '0;
+    end else begin
+      if(stall_register_ || counter != 0) begin
+        //counter <= counter == 1 ? '0: counter + 1;
+        reg_stall_ <= 1;
+      end else begin
+        reg_stall_ <= stall_register_;
+      end
+    end
+  end
+
+logic stall_reg_instr;
+  always_ff @(posedge clk_i or negedge rst_ni) begin 
+    if (!rst_ni) begin
+      stall_reg_instr <= '0;
+    end else begin
+      stall_reg_instr <= stall_register;
+    end
+  end
+*/
+logic bypass_reg_we;
+
   // ID/EX stage can be in two states, FIRST_CYCLE and MULTI_CYCLE. An instruction enters
   // MULTI_CYCLE if it requires multiple cycles to complete regardless of stalls and other
   // considerations. An instruction may be held in FIRST_CYCLE if it's unable to begin executing
@@ -725,11 +779,11 @@ module ibex_id_stage #(
     jump_set                = 1'b0;
     perf_branch_o           = 1'b0;
     stall_register          = 1'b0;
-
     if (instr_executing) begin
       unique case (id_fsm_q)
         FIRST_CYCLE: begin
           unique case (1'b1)
+       
             lsu_req_dec: begin
               if (!WritebackStage) begin
                 // LSU operation
@@ -738,10 +792,6 @@ module ibex_id_stage #(
                 if(~lsu_req_done_i) begin
                   id_fsm_d  = MULTI_CYCLE;
                 end
-              end
-              if(reg_stall_i) begin
-                stall_register = 1'b1;
-                id_fsm_d = MULTI_CYCLE;
               end
             end
             multdiv_en_dec: begin
@@ -778,12 +828,16 @@ module ibex_id_stage #(
               id_fsm_d      = MULTI_CYCLE;
               rf_we_raw     = 1'b0;
             end
-            reg_stall_i: begin
+  /*          write_stall_i: begin
               stall_register = 1'b1;
               id_fsm_d       = MULTI_CYCLE;
-            end
+              //rf_we_raw     = 1'b0;
+              bypass_reg_we = 1'b1;
+            end  
+*/
             default: begin
               id_fsm_d      = FIRST_CYCLE;
+              bypass_reg_we = 1'b0;
             end
           endcase
         end
@@ -792,17 +846,18 @@ module ibex_id_stage #(
           if(multdiv_en_dec) begin
             rf_we_raw       = rf_we_dec & ex_valid_i;
           end
-
           if (multicycle_done & ready_wb_i) begin
             id_fsm_d        = FIRST_CYCLE;
           end else begin
             stall_multdiv   = multdiv_en_dec;
             stall_branch    = branch_in_dec;
             stall_jump      = jump_in_dec;
-            stall_register  = reg_stall_i;
           end
+          if (write_stall_i == 0 ) begin
+           id_fsm_d        = FIRST_CYCLE;
+           stall_register = 1'b0;
+          end 
         end
-
         default: begin
           id_fsm_d          = FIRST_CYCLE;
         end
@@ -817,7 +872,7 @@ module ibex_id_stage #(
 
   // Stall ID/EX stage for reason that relates to instruction in ID/EX
   assign stall_id = stall_ld_hz | stall_mem | stall_multdiv | stall_jump | stall_branch |
-                      stall_alu | stall_register;
+                    stall_alu   | reg_stall_i;
 
   assign instr_done = ~stall_id & ~flush_id & instr_executing;
 
@@ -827,9 +882,10 @@ module ibex_id_stage #(
     assign multicycle_done = lsu_req_dec ? lsu_valid_i : ex_valid_i;
   end
 
+  //  
   // Signal instruction in ID is in it's first cycle. It can remain in its
   // first cycle if it is stalled.
-  assign instr_first_cycle      = instr_valid_i & (id_fsm_q == FIRST_CYCLE);
+  assign instr_first_cycle   = instr_valid_i & (id_fsm_q == FIRST_CYCLE);
   // Used by RVFI to know when to capture register read data
   // Used by ALU to access RS3 if ternary instruction.
   assign instr_first_cycle_id_o = instr_first_cycle;

@@ -99,7 +99,9 @@ module ibex_decoder #(
 
     // jump/branches
     output logic                 jump_in_dec_o,         // jump is being calculated in ALU
-    output logic                 branch_in_dec_o
+    output logic                 branch_in_dec_o,
+
+    input logic                  reg_stall_i
 );
 
   import ibex_pkg::*;
@@ -205,7 +207,7 @@ module ibex_decoder #(
     ecall_insn_o          = 1'b0;
     wfi_insn_o            = 1'b0;
 
-    opcode                = opcode_e'(instr[6:0]);
+    opcode                = reg_stall_i == 1 ? OPCODE_STALL : opcode_e'(instr[6:0]);
 
     unique case (opcode)
 
@@ -285,27 +287,28 @@ module ibex_decoder #(
       end
 
       OPCODE_LOAD: begin
-        rf_ren_a_o          = 1'b1;
-        data_req_o          = 1'b1;
-        data_type_o         = 2'b00;
+        
+          rf_ren_a_o          = 1'b1;
+          data_req_o          = 1'b1;
+          data_type_o         = 2'b00;
 
-        // sign/zero extension
-        data_sign_extension_o = ~instr[14];
+          // sign/zero extension
+          data_sign_extension_o = ~instr[14];
 
-        // load size
-        unique case (instr[13:12])
-          2'b00: data_type_o = 2'b10; // lb(u)
-          2'b01: data_type_o = 2'b01; // lh(u)
-          2'b10: begin
-            data_type_o = 2'b00;      // lw
-            if (instr[14]) begin
-              illegal_insn = 1'b1;    // lwu does not exist
+          // load size
+          unique case (instr[13:12])
+            2'b00: data_type_o = 2'b10; // lb(u)
+            2'b01: data_type_o = 2'b01; // lh(u)
+            2'b10: begin
+              data_type_o = 2'b00;      // lw
+              if (instr[14]) begin
+                illegal_insn = 1'b1;    // lwu does not exist
+              end
             end
-          end
-          default: begin
-            illegal_insn = 1'b1;
-          end
-        endcase
+            default: begin
+              illegal_insn = 1'b1;
+            end
+          endcase
       end
 
       /////////
@@ -579,6 +582,7 @@ module ibex_decoder #(
         end
 
       end
+      OPCODE_STALL: ;
       default: begin
         illegal_insn = 1'b1;
       end
@@ -603,6 +607,7 @@ module ibex_decoder #(
       branch_in_dec_o = 1'b0;
       csr_access_o    = 1'b0;
     end
+
   end
 
   /////////////////////////////

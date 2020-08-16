@@ -132,8 +132,8 @@ class VerilatedToplevel {
    * int clk_value = top->dut().IO_CLK;
    * top->dut().IO_CLK = 1;
    */
-  TOPLEVEL_NAME &dut();
-};
+  TOPLEVEL_NAME &dut();  
+}; 
 
 class TOPLEVEL_NAME : public VERILATED_TOPLEVEL_NAME, public VerilatedToplevel {
  public:

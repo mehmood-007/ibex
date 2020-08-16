@@ -604,7 +604,8 @@ module ibex_core #(
       // hierarchy 
       .reg_access_i(reg_access),
 
-      .reg_stall_i(reg_stall)
+      .reg_stall_i(reg_stall),
+      .write_stall_i(write_stall)
   );
 
   // for RVFI only
