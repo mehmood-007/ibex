@@ -186,7 +186,9 @@ module ibex_id_stage #(
 
     input logic                       reg_stall_i,
 
-    input logic                       write_stall_i
+    input logic                       write_stall_i, 
+
+    output logic                       immediate_inst_o
 );
 
   import ibex_pkg::*;
@@ -302,6 +304,9 @@ module ibex_id_stage #(
   logic [31:0] alu_operand_a;
   logic [31:0] alu_operand_b;
 
+
+  opcode_e opcode_id_stage;
+
   /////////////
   // LSU Mux //
   /////////////
@@ -385,8 +390,12 @@ module ibex_id_stage #(
     end
   end
 
+
   // ALU MUX for Operand B
   assign alu_operand_b = (alu_op_b_mux_sel == OP_B_IMM) ? imm_b : rf_rdata_b_fwd;
+
+  assign opcode_id_stage = opcode_e'(instr_rdata_i[6:0]);
+  assign immediate_inst_o = (opcode_id_stage == OPCODE_OP_IMM ) ? 1 : 0 ;
 
   /////////////////////////////////////////
   // Multicycle Operation Stage Register //

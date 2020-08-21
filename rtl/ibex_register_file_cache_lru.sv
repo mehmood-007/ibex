@@ -58,8 +58,11 @@ module ibex_register_file #(
 
   integer registers [32];
   integer cache_1 [CACHE_LEN];
-  logic [CACHE_LEN-1:0][4:0] cache_1_index ;
-  logic [CACHE_LEN-1:0][4:0] cache_1_index_1 ;
+  logic [CACHE_LEN-1:0][4:0] cache_1_index;
+  logic [CACHE_LEN-1:0][4:0] cache_1_index_1;
+
+  logic [CACHE_LEN-1:0][15:0] cache_1_lru;
+
   // int qu[$];
 
   localparam int unsigned ADDR_WIDTH = RV32E ? 4 : 5;
@@ -172,6 +175,20 @@ logic cache_miss_a, cache_miss_b, cache_miss_c;
       counter_ <= counter_a;
   end
 
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni)
+      cache_1_lru <= '0;
+    else
+      for ( int i = 0; i < CACHE_LEN; i++ ) begin
+        if ( ( raddr_a_i == cache_1_index[i] || raddr_b_i == cache_1_index[i] ) && raddr_b_i != 5'h1f )  begin
+          cache_1_lru <= cache_1_lru + 1;
+        end
+      end
+  end
+
+  
+
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       cache_1_index_1 <= '{default:'0};
@@ -185,31 +202,6 @@ logic cache_miss_a, cache_miss_b, cache_miss_c;
    //  tag_a <= 0;
     end else begin
       for (int r = 0; r < CACHE_LEN; r++) begin
-         /* if( cache_1_index[r] == raddr_a_i && raddr_a_i != '0) begin
-            cache_a_match_1[r] <= 1; 
-           // tag_a <= r;
-            
-            // $display("Cache hit %d, %d", counter_a, raddr_a_i);// -> tag = %x", tag
-          end  
-          else
-            cache_a_match_1[r] <= 0;
-          */
-  /*        if( cache_1_index[r] == raddr_b_i && raddr_b_i != 5'h0) begin
-            cache_b_match_1[r] <= 1; 
-            tag_b <= r;
-            // $display("Cache hit %d, %d", counter_a, raddr_a_i);// -> tag = %x", tag
-          end 
-          else
-            cache_b_match_1[r] <= 0;
-
-          if( cache_1_index[r] == waddr_a_i && waddr_a_i != '0 && we_a_dec[waddr_a_i]) begin
-            cache_c_match_1[r] <= 1;
-            // $display("Cache hit %d, %d", counter_a, raddr_a_i);// -> tag = %x", tag
-          end  
-          else
-            cache_c_match_1[r] <= 0;
-*/
-
           if( |cache_a_match_comb == 0 && raddr_a_i != '0 && |cache_b_match_comb == 0 && raddr_b_i != '0 && raddr_b_i != 5'h1f ) begin
             counter_a <= counter_a >= CACHE_LEN-1 ? 0 : counter_a + 1;
             counter_b <= counter_a >= CACHE_LEN-1 ? 0 : counter_a + 2;

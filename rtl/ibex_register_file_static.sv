@@ -37,32 +37,29 @@ module ibex_register_file #(
     input  logic                 we_a_i,
 
     // hierarchy
-    output logic reg_access_o,
+  //  output logic reg_access_o,
 
     // reg stall
-    output logic reg_stall_o
+    output logic reg_stall_o,
+
+    input  logic [31:0]               pc_id_i,
+    input  logic                      immediate_inst_i
 );
 
   logic write_stall_o;
-  logic [31:0] reg_count [0:NUM_WORDS-1];
-  
-  logic [NUM_WORDS-1:0][5:0] r_reg;
-  logic [NUM_WORDS-1:0][5:0] _r_reg;
-  logic [NUM_WORDS-1:1][5:0] w_reg;
-  
   logic [31:0]  reg_stall;
   logic [31:0]  reg_stall_;
   
   localparam int unsigned ADDR_WIDTH = RV32E ? 4 : 5;
   localparam int unsigned NUM_WORDS  = 2**ADDR_WIDTH;
 
-  logic [NUM_WORDS-1:0][DataWidth-1:0] rf_reg;
+  logic [1:0][DataWidth-1:0] rf_reg;
   logic [3:0][DataWidth-1:0] rf_reg_tmp;
   logic [NUM_WORDS-1:1] we_a_dec;
   logic reg_access;
-  logic [4:0] temp_addr_a;
-  logic [4:0] temp_addr_b;
-  logic [4:0] temp_waddr_a;
+  logic [5:0] temp_addr_a;
+  logic [5:0] temp_addr_b;
+  logic [5:0] temp_waddr_a;
 
   int idx_rd;
   logic cache_miss_a;
@@ -74,6 +71,8 @@ module ibex_register_file #(
   logic [DataWidth-1:0] rd_buf_b;
   logic [DataWidth-1:0] wr_buf;
 
+  logic [DataWidth-1:0] l2_rdata;
+
   logic reg_stall_t;
   logic reg_stall_long; 
   logic [3:0] cnt_stall;
@@ -84,6 +83,8 @@ module ibex_register_file #(
 
   logic write_stall;
   logic write_stall_1;
+  logic write_stall_patch;
+  
   logic [4:0] tag;
   logic [4:0] addr;
   logic L1_sig_wr; // exist in level-1
@@ -93,11 +94,35 @@ module ibex_register_file #(
   logic _sel_op_b;
   logic sel_op_wr;
 
+  logic rd_valid_a;
+  logic rd_valid_b;
+  logic wr_valid;
+  logic l2_opb;
+  logic l2_opa;
+  logic sel_sec_op;
+  logic write_enable;
+
   always_comb begin : we_a_decoder
     for (int unsigned i = 1; i < NUM_WORDS; i++) begin
       we_a_dec[i] = waddr_a_i == 5'(i) ?  we_a_i : 1'b0;
     end
   end
+
+assign write_enable = |we_a_dec;
+
+logic new_inst;
+logic [31:0] temp_pc_id;
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+        temp_pc_id <= '{default:'0};
+    end
+    else begin
+        temp_pc_id <= temp_pc_id != pc_id_i && !write_stall_patch ? pc_id_i : temp_pc_id; 
+    end
+  end
+
+assign new_inst = temp_pc_id != pc_id_i && !write_stall_patch ? 1 : 0;
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
@@ -106,14 +131,19 @@ module ibex_register_file #(
         temp_waddr_a <= '{default:'0};
     end
     else begin
-        temp_addr_a <= temp_addr_a != raddr_a_i ? raddr_a_i : temp_addr_a;
-        temp_addr_b <= temp_addr_b != raddr_b_i ? raddr_b_i : temp_addr_b;
-        temp_waddr_a <= temp_waddr_a != waddr_a_i ? waddr_a_i : temp_waddr_a;
+        temp_addr_a <= write_stall_patch ? 0 : 
+                       temp_addr_a != raddr_a_i ? raddr_a_i : temp_addr_a; 
+   //                    !reg_stall_o ? 0 : temp_addr_a;
+        temp_addr_b <= write_stall_patch ? 0 :
+                       temp_addr_b != raddr_b_i ? raddr_b_i : temp_addr_b;
+ //                      !reg_stall_o ? 0 : temp_addr_b;
+        temp_waddr_a <= temp_waddr_a != waddr_a_i && !write_stall_patch ? waddr_a_i : temp_waddr_a;
        // temp_we_a_dec <= temp_we_a_dec != |we_a_dec ? |we_a_dec : temp_we_a_dec;
     end
   end
 
-assign addr = we_a_i ? waddr_a_i :
+logic [4:0] waddr;
+assign addr = wr_valid ? waddr :
               sel_op_a ? raddr_a_i :
               sel_op_b ? raddr_b_i : 0;
 
@@ -122,6 +152,14 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     sel_sec_op <= 0;
   end else begin
     sel_sec_op <= (cache_miss_a && cache_miss_b) ? 1 : 0;
+  end
+end
+
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if (!rst_ni) begin
+    waddr <= '0;
+  end else begin
+    waddr <= waddr_a_i;
   end
 end
 
@@ -144,16 +182,16 @@ always_ff @(posedge clk_i or negedge rst_ni) begin: buffers
     wr_buf <= '{default:'0};
     wr_valid <= 0;
   end else begin
-    rd_buf_a <= l2_opa ? l2_rdata : rd_buf_a;
-    rd_buf_b <= l2_opb ? l2_rdata : rd_buf_b;
-    rd_valid_a <= l2_opa ? 1 : 
+    rd_buf_a <= sel_op_a ? l2_rdata : rd_buf_a;
+    rd_buf_b <= sel_op_b ? l2_rdata : rd_buf_b;
+    rd_valid_a <= sel_op_a ? 1 : 
                   pe || pe2 ? rd_valid_a : 
                   0;
-    rd_valid_b <= l2_opb ? 1 : 
+    rd_valid_b <= sel_op_b ? 1 : 
                   pe || pe2 ? rd_valid_b : 
                   0;
-    wr_buf  <= we_a_i && !L1_sig_wr ? wdata_a_i : 0;
-    wr_valid <= we_a_i && !L1_sig_wr ? 1 : 0;
+    wr_buf  <= write_enable && !L1_sig_wr ? wdata_a_i : 0;
+    wr_valid <= write_enable && !L1_sig_wr ? 1 : 0;
   end
 end
 
@@ -166,7 +204,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     write_stall_1 <= 0;
   end else begin
 //    for (int r = 1; r < NUM_WORDS; r++) begin
-    if ( we_a_i )
+    if ( write_enable )
       rf_reg_tmp[waddr_a_i-12] <= L1_sig_wr ? wdata_a_i : rf_reg_tmp[waddr_a_i-12];
   write_stall_1 <= write_stall;
   //  end
@@ -175,9 +213,9 @@ end
 
  // L2 register access
  ibex_l2_register_file l2 (
-      .clk_i      (clk_sys),
-      .rst_ni     (rst_sys_n),
-      .addr_i     (tag),
+      .clk_i      (clk_i),
+      .rst_ni     (rst_ni),
+      .addr_i     (addr),
       .wdata_i    (wr_buf),
       .rdata_o    (l2_rdata),
       .we_i       (wr_valid)
@@ -188,26 +226,26 @@ end
 
  // r_reg_count[r] <= (raddr_a_i == 5'(r) || raddr_b_i == 5'(r)) ? (r_reg_count[r] + 1) : r_reg_count[r];
 
-always @(raddr_a_i or raddr_b_i or waddr_a_i) begin
+always_comb begin
   cache_miss_a = 0;
   cache_miss_b = 0;
   cache_miss_c = 0;
   write_stall = 0;
   for ( integer i = 1; i < NUM_WORDS; i++ ) begin: comparators
-    if( raddr_a_i == 5'(i) ) begin
-      if( i != 12 || i != 13 || i != 14 || i != 15 )
+    if( raddr_a_i == 5'(i) && !write_stall_patch ) begin
+      if( i != 12 && i != 13 && i != 14 && i != 15 )
         cache_miss_a = 1;
     end
-    if( raddr_b_i == 5'(i) ) begin 
-      if( i != 12 || i != 13 || i != 14 || i != 15 )
+    if( raddr_b_i == 5'(i) && !write_stall_patch ) begin 
+      if( i != 12 && i != 13 && i != 14 && i != 15 )
         cache_miss_b = 1;
     end
     if( waddr_a_i == 5'(i) && |we_a_dec) begin 
-      if( i != 12 || i != 13 || i != 14 || i != 15 )
+      if( i != 12 && i != 13 && i != 14 && i != 15 )
         cache_miss_c = 1;
-    end
-    cache_miss_a = temp_addr_a != raddr_a_i ? cache_miss_a : 0;
-    cache_miss_b = temp_addr_b != raddr_b_i ? cache_miss_b : 0;
+    end // temp_addr_a != raddr_a_i
+    cache_miss_a = new_inst ? cache_miss_a : 0;
+    cache_miss_b = new_inst && !immediate_inst_i ? cache_miss_b : 0;
     write_stall = cache_miss_c && !cnt ? 1 : 0;
   end
 end
@@ -264,24 +302,14 @@ logic cnt, temp;
     assign rf_reg[0] = '0;
   end
 
-       //assign rf_reg[NUM_WORDS-1:1] = rf_reg_tmp[NUM_WORDS-1:1];
-      // assign reg_count[31:1] = _reg_count[31:1];
-     //  assign r_reg[NUM_WORDS-1:1] = _r_reg[NUM_WORDS-1:1];
-    //   assign r_reg[NUM_WORDS-1:0] = _r_reg[NUM_WORDS-1:0];
-   //    assign r_reg[0] = (raddr_a_i == 5'(0) || raddr_b_i == 5'(0) ) ? 6'h00 : 6'h3f;
-  //     assign rf_reg[31:0][12:1] = reg_queue_2[31:0][12:1];//_r_reg[NUM_WORDS-1:0];
- //      assign rf_reg[17:13] = reg_queue_1[3:0];//_r_reg[NUM_WORDS-1:0];
-//       assign rf_reg[31:18] = 32'(reg_queue_2[26:13]);//_r_reg[NUM_WORDS-1:0];
 
-  //assign rdata_a_o =  rf_reg[raddr_a_i];
-  //assign rdata_b_o =  rf_reg[raddr_b_i];
-  assign rdata_a_o =  raddr_a_i == 5'(0) ? rf_reg[0] ?
+  assign rdata_a_o =  raddr_a_i == 5'(0) ? rf_reg[0] :
                       rd_valid_a ? rd_buf_a : 
-                      rf_reg[raddr_a_i - 12];
+                      rf_reg_tmp[raddr_a_i - 12];
   
-  assign rdata_b_o =  raddr_b_i == 5'(0) ? rf_reg[0] ?
+  assign rdata_b_o =  raddr_b_i == 5'(0) ? rf_reg[0] :
                       rd_valid_b ? rd_buf_b : 
-                      rf_reg[raddr_b_i - 12];
+                      rf_reg_tmp[raddr_b_i - 12];
  
 
 
@@ -312,10 +340,10 @@ logic shift_1, shift_2;
     else begin
     	shift_1 <= write_stall_1;
       shift_2 <= shift_1;
-
     end
 	end
 
+  assign write_stall_patch = write_stall_1;
   assign write_stall_o = pe ? shift_1 : 
                          pe2 ? shift_2 : write_stall_1;
   assign reg_stall_o = pe || pe2 || write_stall_o ;

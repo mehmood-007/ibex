@@ -34,7 +34,7 @@ module ibex_register_file #(
     // Write port W1
     input  logic [4:0]           waddr_a_i,
     input  logic [DataWidth-1:0] wdata_a_i,
-    input  logic                 we_a_i
+    input  logic                 we_a_i,
 
 );
   logic [31:0] reg_count [0:NUM_WORDS-1];
@@ -53,25 +53,25 @@ module ibex_register_file #(
   end
 
   // loop from 1 to NUM_WORDS-1 as R0 is nil
-/*
+
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       rf_reg_tmp <= '{default:'0};
-      reg_count <= '{default:'0};
-      reg_access <= 0;
+     // reg_count <= '{default:'0};
+     // reg_access <= 0;
     end else begin
       for (int r = 1; r < NUM_WORDS; r++) begin
         if (we_a_dec[r]) begin
           rf_reg_tmp[r] <= wdata_a_i;
-          reg_count[r] <= reg_count[r] + 1;
+         // reg_count[r] <= reg_count[r] + 1;
         end
-        else begin
-          reg_count[r] <= (raddr_a_i == 5'(r) || raddr_b_i == 5'(r)) ? (reg_count[r] + 1) : reg_count[r];
-        end
+       // else begin
+        //  reg_count[r] <= (raddr_a_i == 5'(r) || raddr_b_i == 5'(r)) ? (reg_count[r] + 1) : reg_count[r];
+       // end
       end
     end
   end
-*/
+
 
   // With dummy instructions enabled, R0 behaves as a real register but will always return 0 for
   // real instructions.

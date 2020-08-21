@@ -6,7 +6,7 @@
  * targeting FPGA synthesis or Verilator simulation.
  */
 module ibex_l2_register_file #(
-    parameter int unsigned DataWidth         = 32,
+    parameter int unsigned DataWidth         = 32
 ) (
     // Clock and Reset
     input  logic                 clk_i,
@@ -36,26 +36,25 @@ module ibex_l2_register_file #(
     if (!rst_ni) begin
         rf_reg <= '{default:'0};
     end else begin
-        for (int r = 1; r < NUM_WORDS; r++) begin
-            if ( we_dec[r] ) begin 
-                rf_reg[r] <= wdata_i;
-            end
-        end
+      for (int r = 1; r < NUM_WORDS; r++) begin
+        if ( we_dec[r] )
+          rf_reg[r] <= wdata_i;
+      end
     end
   end
-
+/*
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
         rdata <= '{default:'0};
     end else begin
       for (int r = 1; r < NUM_WORDS; r++) begin
         if ( addr_i == 5'(r) ) begin 
-          rdata[r] <= rf_reg[r];
+          rdata <= rf_reg[r];
         end
       end
     end
   end
-
-  assign rdata_o = rdata;
+*/
+  assign rdata_o = rf_reg[addr_i];
 
 endmodule

@@ -439,7 +439,7 @@ module ibex_core #(
   // Qualify the instruction request with PMP error
   assign instr_req_o = instr_req_out & ~pmp_req_err[PMP_I];
 
-
+ // assign reg_stall = 0;
   //
   wire reg_access;
 
@@ -605,7 +605,8 @@ module ibex_core #(
       .reg_access_i(reg_access),
 
       .reg_stall_i(reg_stall),
-      .write_stall_i(write_stall)
+      .write_stall_i(write_stall),
+      .immediate_inst_o(immediate_inst)
   );
 
   // for RVFI only
@@ -765,9 +766,11 @@ module ibex_core #(
       .wdata_a_i        ( rf_wdata_wb    ),
       .we_a_i           ( rf_we_wb       ),
       // hierarchy
-      .reg_access_o(reg_access),
+//      .reg_access_o(reg_access)
 
-      .reg_stall_o(reg_stall)
+      .reg_stall_o(reg_stall),
+      .pc_id_i (pc_id),
+      .immediate_inst_i(immediate_inst)
   );
 
   // Explict INC_ASSERT block to avoid unused signal lint warnings were asserts are not included
