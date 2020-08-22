@@ -114,9 +114,9 @@ module ibex_multdiv_fast #(
   end
 
 
-  `ASSERT_KNOWN(DivEnKnown, div_en_internal);
-  `ASSERT_KNOWN(MultEnKnown, mult_en_internal);
-  `ASSERT_KNOWN(MultDivEnKnown, multdiv_en);
+  // `ASSERT_KNOWN(DivEnKnown, div_en_internal);
+ //  `ASSERT_KNOWN(MultEnKnown, mult_en_internal);
+//  `ASSERT_KNOWN(MultDivEnKnown, multdiv_en);
 
   assign multdiv_en = mult_en_internal | div_en_internal;
 
@@ -241,7 +241,7 @@ module ibex_multdiv_fast #(
     end
 
     // States must be knwon/valid.
-    `ASSERT_KNOWN(IbexMultStateKnown, mult_state_q)
+   // `ASSERT_KNOWN(IbexMultStateKnown, mult_state_q)
 
   // The fast multiplier uses one 17 bit multiplier to compute MUL instructions in 3 cycles
   // and MULH instructions in 4 cycles.
@@ -359,7 +359,7 @@ module ibex_multdiv_fast #(
     end
 
     // States must be knwon/valid.
-    `ASSERT_KNOWN(IbexMultStateKnown, mult_state_q)
+  //  `ASSERT_KNOWN(IbexMultStateKnown, mult_state_q)
 
   end // gen_multdiv_fast
 
@@ -505,8 +505,8 @@ module ibex_multdiv_fast #(
 
   assign valid_o = mult_valid | div_valid;
 
-  // States must be knwon/valid.
-  `ASSERT(IbexMultDivStateValid, md_state_q inside {
-      MD_IDLE, MD_ABS_A, MD_ABS_B, MD_COMP, MD_LAST, MD_CHANGE_SIGN, MD_FINISH})
+  // States must be knwon/valid. 
+ //  `ASSERT(IbexMultDivStateValid, md_state_q inside {
+//      MD_IDLE, MD_ABS_A, MD_ABS_B, MD_COMP, MD_LAST, MD_CHANGE_SIGN, MD_FINISH})
 
 endmodule // ibex_mult

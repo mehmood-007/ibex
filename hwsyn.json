@@ -1,0 +1,62 @@
+{
+    "compile": [
+        {
+            "name": "core",
+            "include": ["assert", "non_trivial"],
+            "sv": [ "rtl/ibex_pkg.sv", "rtl/ibex_tracer_pkg.sv", "rtl/ibex_alu.sv", "rtl/ibex_compressed_decoder.sv","rtl/ibex_controller.sv","rtl/ibex_cs_registers.sv","rtl/ibex_counters.sv","rtl/ibex_decoder.sv","rtl/ibex_ex_block.sv","rtl/ibex_fetch_fifo.sv", "rtl/ibex_id_stage.sv", "rtl/ibex_if_stage.sv", "rtl/ibex_load_store_unit.sv", "rtl/ibex_multdiv_fast.sv", "rtl/ibex_multdiv_slow.sv", "rtl/ibex_prefetch_buffer.sv", "rtl/ibex_pmp.sv", "rtl/ibex_wb_stage.sv", "rtl/ibex_dummy_instr.sv", "rtl/ibex_icache.sv", "rtl/ibex_core.sv" , "rtl/ibex_core_tracing.sv" 
+            ]
+        },
+        {
+            "name": "assert",
+            "sv": ["shared/rtl/prim_assert.sv"]
+        },
+        {
+            "name": "trivial",
+            "sv": ["rtl/ibex_register_file_ff.sv"]
+        },
+        {
+            "name": "non_trivial",
+            "sv": ["rtl/ibex_register_file_static.sv","rtl/ibex_register_file_l2.sv"]
+        },
+        {
+            "name": "bus",
+            "sv": ["shared/rtl/bus.sv"]
+        },
+        {
+            "name": "ram",
+            "sv": ["shared/rtl/ram_1p.sv"]
+        },
+        {
+            "name": "timer",
+            "sv": ["shared/rtl/timer.sv"]
+        },
+        {
+            "name": "testbench",
+            "include": ["core", "ram" , "bus", "timer"],
+            "sv": ["examples/simple_system/rtl/ibex_simple_system.sv"]
+        }
+    ],
+    "sim": [
+        {
+            "name": "batch",
+            "toplevel": "ibex_simple_system"
+        }
+    ],
+    "units": [
+       {
+           "name": "dut",
+           "toplevel": "ibex_core_tracing",
+           "compile": ["core"]
+       }
+    ],
+    "run": [
+       {
+           "name": "sanity",
+           "generator": ["python3", "testgen.py"] ,
+           "tests": [
+              ["batch", "--simarg", "OP1=34", "OP2=56", "EXP=90"],
+              ["batch", "--simarg", "OP1=8", "OP2=-15", "EXP=-7"]
+           ]
+       }
+    ]
+}

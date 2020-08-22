@@ -21,9 +21,9 @@ module ibex_l2_register_file #(
 
 );
 
-  parameter int unsigned NUM_WORDS = 32;
-  logic [31:1][DataWidth-1:0] rf_reg;
-  logic [31:1]                we_dec;
+  parameter int unsigned NUM_WORDS = 28;
+  logic [NUM_WORDS-1:1][DataWidth-1:0] rf_reg;
+  logic [NUM_WORDS-1:1]                we_dec;
   logic [DataWidth-1:0] rdata;
 
   always_comb begin : we_decoder

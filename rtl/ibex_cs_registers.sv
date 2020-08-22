@@ -643,10 +643,10 @@ module ibex_cs_registers #(
     endcase
   end
 
-  assign csr_wreq = csr_op_en_i &
-    (csr_op_i inside {CSR_OP_WRITE,
-                      CSR_OP_SET,
-                      CSR_OP_CLEAR});
+  assign csr_wreq = csr_op_en_i & (csr_op_i == CSR_OP_WRITE || csr_op_i == CSR_OP_SET || csr_op_i == CSR_OP_CLEAR);
+//    (csr_op_i inside {CSR_OP_WRITE,
+  //                    CSR_OP_SET,
+    //                  CSR_OP_CLEAR});
 
   // only write CSRs during one clock cycle
   assign csr_we_int  = csr_wreq & ~illegal_csr_insn_o;
@@ -1161,6 +1161,6 @@ module ibex_cs_registers #(
   // Assertions //
   ////////////////
 
-  `ASSERT(IbexCsrOpEnRequiresAccess, csr_op_en_i |-> csr_access_i)
+ // `ASSERT(IbexCsrOpEnRequiresAccess, csr_op_en_i |-> csr_access_i)
 
 endmodule

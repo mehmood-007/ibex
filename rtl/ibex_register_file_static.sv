@@ -102,6 +102,8 @@ module ibex_register_file #(
   logic sel_sec_op;
   logic write_enable;
 
+  logic cnt, temp;
+
   always_comb begin : we_a_decoder
     for (int unsigned i = 1; i < NUM_WORDS; i++) begin
       we_a_dec[i] = waddr_a_i == 5'(i) ?  we_a_i : 1'b0;
@@ -133,12 +135,9 @@ assign new_inst = temp_pc_id != pc_id_i && !write_stall_patch ? 1 : 0;
     else begin
         temp_addr_a <= write_stall_patch ? 0 : 
                        temp_addr_a != raddr_a_i ? raddr_a_i : temp_addr_a; 
-   //                    !reg_stall_o ? 0 : temp_addr_a;
         temp_addr_b <= write_stall_patch ? 0 :
                        temp_addr_b != raddr_b_i ? raddr_b_i : temp_addr_b;
- //                      !reg_stall_o ? 0 : temp_addr_b;
         temp_waddr_a <= temp_waddr_a != waddr_a_i && !write_stall_patch ? waddr_a_i : temp_waddr_a;
-       // temp_we_a_dec <= temp_we_a_dec != |we_a_dec ? |we_a_dec : temp_we_a_dec;
     end
   end
 
@@ -203,11 +202,9 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     rf_reg_tmp <= '{default:'0};
     write_stall_1 <= 0;
   end else begin
-//    for (int r = 1; r < NUM_WORDS; r++) begin
     if ( write_enable )
       rf_reg_tmp[waddr_a_i-12] <= L1_sig_wr ? wdata_a_i : rf_reg_tmp[waddr_a_i-12];
   write_stall_1 <= write_stall;
-  //  end
   end
 end
 
@@ -220,10 +217,6 @@ end
       .rdata_o    (l2_rdata),
       .we_i       (wr_valid)
   );
-
- logic [DataWidth-1:0] temp_data_a;
- logic [DataWidth-1:0] temp_data_b;
-
  // r_reg_count[r] <= (raddr_a_i == 5'(r) || raddr_b_i == 5'(r)) ? (r_reg_count[r] + 1) : r_reg_count[r];
 
 always_comb begin
@@ -231,23 +224,15 @@ always_comb begin
   cache_miss_b = 0;
   cache_miss_c = 0;
   write_stall = 0;
-  for ( integer i = 1; i < NUM_WORDS; i++ ) begin: comparators
-    if( raddr_a_i == 5'(i) && !write_stall_patch ) begin
-      if( i != 12 && i != 13 && i != 14 && i != 15 )
-        cache_miss_a = 1;
-    end
-    if( raddr_b_i == 5'(i) && !write_stall_patch ) begin 
-      if( i != 12 && i != 13 && i != 14 && i != 15 )
-        cache_miss_b = 1;
-    end
-    if( waddr_a_i == 5'(i) && |we_a_dec) begin 
-      if( i != 12 && i != 13 && i != 14 && i != 15 )
-        cache_miss_c = 1;
-    end // temp_addr_a != raddr_a_i
-    cache_miss_a = new_inst ? cache_miss_a : 0;
-    cache_miss_b = new_inst && !immediate_inst_i ? cache_miss_b : 0;
-    write_stall = cache_miss_c && !cnt ? 1 : 0;
-  end
+  if( raddr_a_i != 12 && raddr_a_i != 13 && raddr_a_i != 14 && raddr_a_i != 15 && !write_stall_patch  )
+    cache_miss_a = 1;
+  if( raddr_b_i != 12 && raddr_b_i != 13 && raddr_b_i != 14 && raddr_b_i != 15 && !write_stall_patch )
+      cache_miss_b = 1;
+  if( waddr_a_i != 12 && waddr_a_i != 13 && waddr_a_i != 14 && waddr_a_i != 15  && |we_a_dec )
+      cache_miss_c = 1;
+  cache_miss_a = new_inst ? cache_miss_a : 0;
+  cache_miss_b = new_inst && !immediate_inst_i ? cache_miss_b : 0;
+  write_stall = cache_miss_c && !cnt ? 1 : 0;
 end
 
 assign sel_op_a = cache_miss_a && cache_miss_b ? 1 :
@@ -256,21 +241,18 @@ assign sel_op_a = cache_miss_a && cache_miss_b ? 1 :
 assign sel_op_b = cache_miss_a && cache_miss_b ? 0 :
                   cache_miss_b || sel_sec_op ? 1 : 0;
 
-logic cnt, temp;
+
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-        cnt <= 0; temp <= 0;
+        cnt <= 0;
     end
     else begin
       if(write_stall && !cnt) begin
         cnt <= ~cnt;
-        temp <= 1;
       end
       else if(!write_stall) begin
         cnt <= 0;
       end
-      else
-        temp <= 0;
     end
   end
 
@@ -347,6 +329,6 @@ logic shift_1, shift_2;
   assign write_stall_o = pe ? shift_1 : 
                          pe2 ? shift_2 : write_stall_1;
   assign reg_stall_o = pe || pe2 || write_stall_o ;
-  assign reg_access_o = reg_access;
+ // assign reg_access_o = reg_access;
   
 endmodule

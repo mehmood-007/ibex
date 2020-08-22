@@ -34,13 +34,15 @@ module ibex_register_file #(
     // Write port W1
     input  logic [4:0]           waddr_a_i,
     input  logic [DataWidth-1:0] wdata_a_i,
-    input  logic                 we_a_i,
+    input  logic                 we_a_i
 
 );
-  logic [31:0] reg_count [0:NUM_WORDS-1];
 
   localparam int unsigned ADDR_WIDTH = RV32E ? 4 : 5;
   localparam int unsigned NUM_WORDS  = 2**ADDR_WIDTH;
+
+  logic [31:0] reg_count [0:NUM_WORDS-1];
+
 
   logic [NUM_WORDS-1:0][DataWidth-1:0] rf_reg;
   logic [NUM_WORDS-1:1][DataWidth-1:0] rf_reg_tmp;

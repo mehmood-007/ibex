@@ -923,6 +923,7 @@ module ibex_core #(
       .div_wait_i              ( perf_div_wait            )
   );
 
+/*
   // These assertions are in top-level as instr_valid_id required as the enable term
   `ASSERT(IbexCsrOpValid, instr_valid_id |-> csr_op inside {
       CSR_OP_READ,
@@ -931,7 +932,7 @@ module ibex_core #(
       CSR_OP_CLEAR
       })
   `ASSERT_KNOWN_IF(IbexCsrWdataIntKnown, cs_registers_i.csr_wdata_int, csr_op_en)
-
+*/
   if (PMPEnable) begin : g_pmp
     logic [33:0] pmp_req_addr [PMP_NUM_CHAN];
     pmp_req_e    pmp_req_type [PMP_NUM_CHAN];

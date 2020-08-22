@@ -233,7 +233,7 @@ module ibex_fetch_fifo #(
   ////////////////
   // Assertions //
   ////////////////
-
+/*
   // Must not push and pop simultaneously when FIFO full.
   `ASSERT(IbexFetchFifoPushPopFull,
       (in_valid_i && pop_fifo) |-> (!valid_q[DEPTH-1] || clear_i))
@@ -241,5 +241,5 @@ module ibex_fetch_fifo #(
   // Must not push to FIFO when full.
   `ASSERT(IbexFetchFifoPushFull,
       (in_valid_i) |-> (!valid_q[DEPTH-1] || clear_i))
-
+*/
 endmodule

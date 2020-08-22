@@ -14,7 +14,7 @@
  * file.
  */
 
-`include "prim_assert.sv"
+`include "shared/rtl/prim_assert.sv"
 
 module ibex_id_stage #(
     parameter bit RV32E           = 0,
@@ -727,8 +727,8 @@ module ibex_id_stage #(
   // Holding branch_set/jump_set high for more than one cycle may not cause a functional issue but
   // could generate needless prefetch buffer flushes and instruction fetches. ID/EX is designed such
   // that this shouldn't ever happen.
-  `ASSERT(NeverDoubleBranch, branch_set |=> ~branch_set)
-  `ASSERT(NeverDoubleJump, jump_set |=> ~jump_set)
+//  `ASSERT(NeverDoubleBranch, branch_set |=> ~branch_set)
+//  `ASSERT(NeverDoubleJump, jump_set |=> ~jump_set)
 
   ///////////////
   // ID-EX FSM //
@@ -877,7 +877,7 @@ logic bypass_reg_we;
   // Note for the two-stage configuration ready_wb_i is always set
   assign multdiv_ready_id_o = ready_wb_i;
 
-  `ASSERT(StallIDIfMulticycle, (id_fsm_q == FIRST_CYCLE) & (id_fsm_d == MULTI_CYCLE) |-> stall_id)
+//  `ASSERT(StallIDIfMulticycle, (id_fsm_q == FIRST_CYCLE) & (id_fsm_d == MULTI_CYCLE) |-> stall_id)
 
   // Stall ID/EX stage for reason that relates to instruction in ID/EX
   assign stall_id = stall_ld_hz | stall_mem | stall_multdiv | stall_jump | stall_branch |
@@ -962,8 +962,8 @@ logic bypass_reg_we;
                              ~stall_ld_hz               &
                              ~outstanding_memory_access;
 
-    `ASSERT(IbexStallIfValidInstrNotExecuting,
-      instr_valid_i & ~instr_kill & ~instr_executing |-> stall_id)
+   // `ASSERT(IbexStallIfValidInstrNotExecuting,
+   //   instr_valid_i & ~instr_kill & ~instr_executing |-> stall_id)
 
     // Stall for reasons related to memory:
     // * Requested by LSU (load/store in ID/EX needs to be held in ID/EX whilst a data request or
@@ -1015,8 +1015,8 @@ logic bypass_reg_we;
     // Without writeback stage any valid instruction that hasn't seen an error will execute
     assign instr_executing = instr_valid_i & ~instr_fetch_err_i & controller_run;
 
-    `ASSERT(IbexStallIfValidInstrNotExecuting,
-      instr_valid_i & ~instr_fetch_err_i & ~instr_executing & controller_run |-> stall_id)
+  //  `ASSERT(IbexStallIfValidInstrNotExecuting,
+  //    instr_valid_i & ~instr_fetch_err_i & ~instr_executing & controller_run |-> stall_id)
 
     // No data forwarding without writeback stage so always take source register data direct from
     // register file
@@ -1064,7 +1064,7 @@ logic bypass_reg_we;
   ////////////////
   // Assertions //
   ////////////////
-
+/*
   // Selectors must be known/valid.
   `ASSERT_KNOWN_IF(IbexAluOpMuxSelKnown, alu_op_a_mux_sel, instr_valid_i)
   `ASSERT(IbexAluAOpMuxSelValid, instr_valid_i |-> alu_op_a_mux_sel inside {
@@ -1128,5 +1128,5 @@ logic bypass_reg_we;
   `ifdef CHECK_MISALIGNED
   `ASSERT(IbexMisalignedMemoryAccess, !lsu_addr_incr_req_i)
   `endif
-
+*/
 endmodule

@@ -217,13 +217,13 @@ module ibex_controller #(
   // special request that can specifically occur during branch instructions
   // All terms in this expression are qualified by instr_valid_i
   assign special_req_branch = instr_fetch_err & (ctrl_fsm_cs != FLUSH);
-
+/*
   `ASSERT(SpecialReqBranchGivesSpecialReqAll,
     special_req_branch |-> special_req_all)
 
   `ASSERT(SpecialReqAllGivesSpecialReqBranchIfBranchInst,
     special_req_all && (branch_set_i || jump_set_i) |-> special_req_branch)
-
+*/
   if (WritebackStage) begin
     // Instruction in writeback is generating an exception so instruction in ID must not execute
     assign wb_exception_o = load_err_q | store_err_q | load_err_i | store_err_i;
@@ -732,7 +732,7 @@ module ibex_controller #(
   ////////////////
   // Assertions //
   ////////////////
-
+/*
   // Selectors must be known/valid.
   `ASSERT(IbexCtrlStateValid, ctrl_fsm_cs inside {
       RESET, BOOT_SET, WAIT_SLEEP, SLEEP, FIRST_FETCH, DECODE, FLUSH,
@@ -740,5 +740,5 @@ module ibex_controller #(
 
   // The speculative branch signal should be set whenever the actual branch signal is set
   `ASSERT(IbexSpecImpliesSetPC, pc_set_o |-> pc_set_spec_o)
-
+*/
 endmodule

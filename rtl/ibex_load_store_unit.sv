@@ -499,7 +499,7 @@ module ibex_load_store_unit
   ////////////////
   // Assertions //
   ////////////////
-
+/*
   // Selectors must be known/valid.
   `ASSERT(IbexDataTypeKnown, (lsu_req_i | busy_o) |-> !$isunknown(lsu_type_i))
   `ASSERT(IbexDataOffsetKnown, (lsu_req_i | busy_o) |-> !$isunknown(data_offset))
@@ -517,5 +517,5 @@ module ibex_load_store_unit
 
   // Address must be word aligned when request is sent.
   `ASSERT(IbexDataAddrUnaligned, data_req_o |-> (data_addr_o[1:0] == 2'b00))
-
+*/
 endmodule

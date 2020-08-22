@@ -11,7 +11,7 @@
  * assertions only.
  */
 
-`include "prim_assert.sv"
+`include "shared/rtl/prim_assert.sv"
 
 module ibex_compressed_decoder (
     input  logic        clk_i,
@@ -283,8 +283,8 @@ module ibex_compressed_decoder (
   ////////////////
 
   // Selectors must be known/valid.
-  `ASSERT(IbexInstrLSBsKnown, valid_i |->
-      !$isunknown(instr_i[1:0]))
+/*
+  `ASSERT(IbexInstrLSBsKnown, valid_i |->!$isunknown(instr_i[1:0]))
   `ASSERT(IbexC0Known1, (valid_i && (instr_i[1:0] == 2'b00)) |->
       !$isunknown(instr_i[15:13]))
   `ASSERT(IbexC1Known1, (valid_i && (instr_i[1:0] == 2'b01)) |->
@@ -296,5 +296,5 @@ module ibex_compressed_decoder (
       !$isunknown({instr_i[12], instr_i[6:5]}))
   `ASSERT(IbexC2Known1, (valid_i && (instr_i[1:0] == 2'b10)) |->
       !$isunknown(instr_i[15:13]))
-
+*/
 endmodule
