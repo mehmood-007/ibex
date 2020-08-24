@@ -764,13 +764,13 @@ module ibex_core #(
       // write port
       .waddr_a_i        ( rf_waddr_wb    ),
       .wdata_a_i        ( rf_wdata_wb    ),
-      .we_a_i           ( rf_we_wb       ),
+      .we_a_i           ( rf_we_wb       )
       // hierarchy
 //      .reg_access_o(reg_access)
 
-      .reg_stall_o(reg_stall),
-      .pc_id_i (pc_id),
-      .immediate_inst_i(immediate_inst)
+    //  .reg_stall_o(reg_stall),
+    //   .pc_id_i (pc_id),
+   //   .immediate_inst_i(immediate_inst)
   );
 
   // Explict INC_ASSERT block to avoid unused signal lint warnings were asserts are not included

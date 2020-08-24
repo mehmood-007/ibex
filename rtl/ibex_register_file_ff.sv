@@ -41,9 +41,6 @@ module ibex_register_file #(
   localparam int unsigned ADDR_WIDTH = RV32E ? 4 : 5;
   localparam int unsigned NUM_WORDS  = 2**ADDR_WIDTH;
 
-  logic [31:0] reg_count [0:NUM_WORDS-1];
-
-
   logic [NUM_WORDS-1:0][DataWidth-1:0] rf_reg;
   logic [NUM_WORDS-1:1][DataWidth-1:0] rf_reg_tmp;
   logic [NUM_WORDS-1:1]                we_a_dec;
@@ -59,17 +56,11 @@ module ibex_register_file #(
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       rf_reg_tmp <= '{default:'0};
-     // reg_count <= '{default:'0};
-     // reg_access <= 0;
     end else begin
       for (int r = 1; r < NUM_WORDS; r++) begin
         if (we_a_dec[r]) begin
           rf_reg_tmp[r] <= wdata_a_i;
-         // reg_count[r] <= reg_count[r] + 1;
         end
-       // else begin
-        //  reg_count[r] <= (raddr_a_i == 5'(r) || raddr_b_i == 5'(r)) ? (reg_count[r] + 1) : reg_count[r];
-       // end
       end
     end
   end

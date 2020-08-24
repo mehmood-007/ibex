@@ -57,9 +57,6 @@ module ibex_register_file #(
   logic [3:0][DataWidth-1:0] rf_reg_tmp;
   logic [NUM_WORDS-1:1] we_a_dec;
   logic reg_access;
-  logic [5:0] temp_addr_a;
-  logic [5:0] temp_addr_b;
-  logic [5:0] temp_waddr_a;
 
   int idx_rd;
   logic cache_miss_a;
@@ -125,7 +122,7 @@ logic [31:0] temp_pc_id;
   end
 
 assign new_inst = temp_pc_id != pc_id_i && !write_stall_patch ? 1 : 0;
-
+/*
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
         temp_addr_a <= '{default:'0};
@@ -140,7 +137,7 @@ assign new_inst = temp_pc_id != pc_id_i && !write_stall_patch ? 1 : 0;
         temp_waddr_a <= temp_waddr_a != waddr_a_i && !write_stall_patch ? waddr_a_i : temp_waddr_a;
     end
   end
-
+*/
 logic [4:0] waddr;
 assign addr = wr_valid ? waddr :
               sel_op_a ? raddr_a_i :
@@ -161,7 +158,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     waddr <= waddr_a_i;
   end
 end
-
+/*
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     l2_opa <= 0;
@@ -171,7 +168,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     l2_opb <= sel_op_b;
   end
 end
-
+*/
 always_ff @(posedge clk_i or negedge rst_ni) begin: buffers
   if (!rst_ni) begin
     rd_buf_a <= '{default:'0};
@@ -195,7 +192,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin: buffers
 end
 
 assign tag = addr >= 16 ? 11 + (addr-15) : addr;
-assign L1_sig_wr = ( waddr_a_i == 12 || waddr_a_i == 13 || waddr_a_i == 14 || waddr_a_i == 15 ) ? 1 : 0;
+// assign L1_sig_wr = cache_miss_c;//( waddr_a_i == 12 || waddr_a_i == 13 || waddr_a_i == 14 || waddr_a_i == 15 ) ? 1 : 0;
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
@@ -224,12 +221,15 @@ always_comb begin
   cache_miss_b = 0;
   cache_miss_c = 0;
   write_stall = 0;
+  L1_sig_wr = 1;
   if( raddr_a_i != 12 && raddr_a_i != 13 && raddr_a_i != 14 && raddr_a_i != 15 && !write_stall_patch  )
     cache_miss_a = 1;
   if( raddr_b_i != 12 && raddr_b_i != 13 && raddr_b_i != 14 && raddr_b_i != 15 && !write_stall_patch )
       cache_miss_b = 1;
-  if( waddr_a_i != 12 && waddr_a_i != 13 && waddr_a_i != 14 && waddr_a_i != 15  && |we_a_dec )
+  if( waddr_a_i != 12 && waddr_a_i != 13 && waddr_a_i != 14 && waddr_a_i != 15  && write_enable ) begin
       cache_miss_c = 1;
+      L1_sig_wr = 0;
+  end
   cache_miss_a = new_inst ? cache_miss_a : 0;
   cache_miss_b = new_inst && !immediate_inst_i ? cache_miss_b : 0;
   write_stall = cache_miss_c && !cnt ? 1 : 0;
@@ -292,7 +292,6 @@ assign sel_op_b = cache_miss_a && cache_miss_b ? 0 :
   assign rdata_b_o =  raddr_b_i == 5'(0) ? rf_reg[0] :
                       rd_valid_b ? rd_buf_b : 
                       rf_reg_tmp[raddr_b_i - 12];
- 
 
 
   assign sig = cache_miss_a || cache_miss_b;
