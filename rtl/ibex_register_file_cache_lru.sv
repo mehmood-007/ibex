@@ -53,7 +53,7 @@ module ibex_register_file #(
   logic [31:0]  reg_stall;
   logic [31:0]  reg_stall_;
   
-  parameter int CACHE_LEN = 4;
+  parameter int CACHE_LEN = 16;
 
 
   integer registers [32];
@@ -154,10 +154,12 @@ logic [$clog2(CACHE_LEN)-1:0] counter_c;
         //$display("Cache hit -> tag = %d, index = %d", tag, reg_address_a);
       else cache_match = 0;
     end 
+   /*
     if(!cache_match) begin
-      //cache_1_index[counter_a] = addr;
+      cache_1_index[counter_a] = addr;
       cache_1[counter_a+1] = data;
     end
+    */
   endtask
 
 
@@ -167,6 +169,13 @@ logic [4:0] reg_address_a;
 logic [4:0] reg_address_b;
 logic cache_miss_a, cache_miss_b, cache_miss_c;
 
+logic [15:0] mini;
+logic [15:0] mini_idx;
+
+logic [15:0] mini_2;
+logic [15:0] mini_idx_2;
+
+logic [15:0] max;
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni)
@@ -177,17 +186,65 @@ logic cache_miss_a, cache_miss_b, cache_miss_c;
 
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni)
-      cache_1_lru <= '0;
-    else
+    if (!rst_ni) begin
+      for ( int i = 0; i < CACHE_LEN; i++ )
+        cache_1_lru[i] <= 16'hFFFF;
+    end
+    else  begin
       for ( int i = 0; i < CACHE_LEN; i++ ) begin
-        if ( ( raddr_a_i == cache_1_index[i] || raddr_b_i == cache_1_index[i] ) && raddr_b_i != 5'h1f )  begin
-          cache_1_lru <= cache_1_lru + 1;
-        end
+        if ( raddr_a_i == cache_1_index[i] && raddr_a_i != '0 && temp_addr_a != raddr_a_i)
+          cache_1_lru[i] <= cache_1_lru[i] + 1;
+        if ( raddr_b_i == cache_1_index[i] && raddr_b_i != '0 && raddr_b_i != 5'h1F && temp_addr_b != raddr_b_i)
+          cache_1_lru[i] <= cache_1_lru[i] + 1;
       end
+      if( idx_1 != 16'hffff && idx_2 != 16'hffff && temp_addr_a != raddr_a_i && temp_addr_b != raddr_b_i ) begin
+        cache_1_lru[idx_1] <= max + 2;
+        cache_1_lru[idx_2] <= max + 1;
+      end
+      else if( idx_1 != 16'hffff )
+        cache_1_lru[idx_1] <= max + 1;
+      if( idx_2 != 16'hffff )
+        cache_1_lru[idx_2] <= max + 1 ;
+    end
   end
 
-  
+  always_comb  begin
+    max = 16'h0000;
+    for ( int i = 0; i < CACHE_LEN; i = i + 1 ) begin 
+      if ( cache_1_lru[i] > max && cache_1_lru[i] != 16'hffff )
+        max = cache_1_lru[i]; 
+    end
+  end
+
+  always_comb  begin
+    mini = 16'hffff;
+    mini_2 = 16'hffff;
+    for ( int i = 0; i < CACHE_LEN; i = i + 1 ) begin :gen_comps_l1
+      if ( cache_1_lru[i] < mini )
+        mini  = cache_1_lru[i]; 
+    end
+    for ( int i = 0; i < CACHE_LEN; i = i + 1 ) begin
+      if ( cache_1_lru[i] == 16'hffff ) 
+        mini  = cache_1_lru[i]; 
+    end
+    for ( int i = 0; i < CACHE_LEN; i = i + 1 ) begin 
+      if ( cache_1_lru[i] == mini )
+        mini_idx = i;
+    end
+
+    for ( int i = 0; i < CACHE_LEN; i = i + 1 ) begin
+      if ( cache_1_lru[i] < mini_2 && i != mini_idx )
+        mini_2  = cache_1_lru[i];
+    end
+    for ( int i = 0; i < CACHE_LEN; i = i + 1 ) begin
+      if ( cache_1_lru[i] == 16'hffff && i != mini_idx ) 
+        mini_2  = cache_1_lru[i]; 
+    end
+    for ( int i = 0; i < CACHE_LEN; i = i + 1 ) begin 
+      if ( cache_1_lru[i] == mini_2 && i != mini_idx )
+        mini_idx_2 = i;
+    end
+  end
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
@@ -245,6 +302,9 @@ assign cache_a_match = |cache_a_match_comb;
 assign cache_b_match = |cache_b_match_comb;
 assign cache_c_match = |cache_c_match_comb;
 
+logic [15:0] idx_1;
+logic [15:0] idx_2;
+
 always @( * ) begin
   reg_address_a = '0;
   reg_address_b = '0;
@@ -253,6 +313,16 @@ always @( * ) begin
   
   cache_miss_b = 0;
   cache_miss_c = 0;
+  idx_1 = 16'hffff;
+  idx_2 = 16'hffff;
+
+  if ( cache_a_match == 0 && raddr_a_i != 0 && cache_b_match == 0 && raddr_b_i != 5'h0 && raddr_b_i != 5'h1F ) begin
+    idx_1 = mini_idx; idx_2 = mini_idx_2;
+  end
+  else if ( cache_a_match == 0 && raddr_a_i != 0 )
+    idx_1 = mini_idx;
+  else if ( cache_b_match == 0 && raddr_b_i != 5'h0 && raddr_b_i != 5'h1F ) 
+    idx_2 = mini_idx;
 
   if( cache_a_match == 1 ) begin
     temp_reg_a = cache_1[tag_a];
@@ -260,8 +330,8 @@ always @( * ) begin
   end
   else if( cache_a_match == 0 && raddr_a_i != 0  ) begin // doesn't exist in cache
     temp_reg_a = registers[raddr_a_i];
-   // cache_1_index[counter_a] = raddr_a_i;
-    cache_1[counter_a] = temp_reg_a;
+    cache_1_index[idx_1] = raddr_a_i;
+    cache_1[idx_1] = temp_reg_a;
     cache_miss_a = 1;
     //$display( "Cache miss, addr-A %d-> %d ", reg_address_a, counter_a );
   end
@@ -273,8 +343,8 @@ always @( * ) begin
 
   else if( cache_b_match == 0 && raddr_b_i != 5'h0 && raddr_b_i != 5'h1F ) begin // doesn't exist in cache
     temp_reg_b = registers[raddr_b_i];
-  //  cache_1_index[counter_b] = raddr_b_i;
-    cache_1[counter_b] = temp_reg_b;
+    cache_1_index[idx_2] = raddr_b_i;
+    cache_1[idx_2] = temp_reg_b;
    // counter_a = counter_ >= CACHE_LEN ? '0 : counter_ + 1;
     cache_miss_b = 1;
     // $display( "Cache miss, addr-B %d-> %d ", reg_address_b, counter_a );

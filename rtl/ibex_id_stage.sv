@@ -14,7 +14,7 @@
  * file.
  */
 
-`include "shared/rtl/prim_assert.sv"
+`include "prim_assert.sv"
 
 module ibex_id_stage #(
     parameter bit RV32E           = 0,

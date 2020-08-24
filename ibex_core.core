@@ -37,9 +37,9 @@ filesets:
 #     - rtl/ibex_register_file_ff.sv # generic FF-based
 #     - rtl/ibex_register_file_ff_level.sv # generic FF-based hierarchy based
 #     - rtl/ibex_register_file_cache.sv # generic FF-based hierarchy round-robin cache based
-#     - rtl/ibex_register_file_cache_lru.sv
-      - rtl/ibex_register_file_l2.sv
-      - rtl/ibex_register_file_static.sv
+      - rtl/ibex_register_file_cache_lru.sv
+#     - rtl/ibex_register_file_l2.sv
+#     - rtl/ibex_register_file_static.sv
       - rtl/ibex_core.sv
     file_type: systemVerilogSource
 

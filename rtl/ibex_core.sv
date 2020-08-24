@@ -768,9 +768,9 @@ module ibex_core #(
       // hierarchy
 //      .reg_access_o(reg_access)
 
-      .reg_stall_o(reg_stall),
-      .pc_id_i (pc_id),
-      .immediate_inst_i(immediate_inst)
+      .reg_stall_o(reg_stall)
+   //   .pc_id_i (pc_id),
+   //   .immediate_inst_i(immediate_inst)
   );
 
   // Explict INC_ASSERT block to avoid unused signal lint warnings were asserts are not included

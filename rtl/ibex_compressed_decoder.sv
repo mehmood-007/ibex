@@ -11,7 +11,7 @@
  * assertions only.
  */
 
-`include "shared/rtl/prim_assert.sv"
+`include "prim_assert.sv"
 
 module ibex_compressed_decoder (
     input  logic        clk_i,
