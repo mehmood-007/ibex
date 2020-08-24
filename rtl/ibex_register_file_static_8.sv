@@ -54,7 +54,7 @@ module ibex_register_file #(
   localparam int unsigned NUM_WORDS  = 2**ADDR_WIDTH;
 
   logic [1:0][DataWidth-1:0] rf_reg;
-  logic [3:0][DataWidth-1:0] rf_reg_tmp;
+  logic [7:0][DataWidth-1:0] rf_reg_tmp;
   logic [NUM_WORDS-1:1] we_a_dec;
   logic reg_access;
 
@@ -165,7 +165,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin: buffers
   end
 end
 
-assign tag = addr < 8 ? addr: 8 + (addr-15);
+assign tag = addr >= 16 ? 11 + (addr-15) : addr;
 //assign L1_sig_wr = ( waddr_a_i == 12 || waddr_a_i == 13 || waddr_a_i == 14 || waddr_a_i == 15 ) ? 1 : 0;
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
@@ -174,7 +174,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     write_stall_1 <= 0;
   end else begin
     if ( write_enable )
-      rf_reg_tmp[waddr_a_i-12] <= L1_sig_wr ? wdata_a_i : rf_reg_tmp[waddr_a_i-12];
+      rf_reg_tmp[waddr_a_i-8] <= L1_sig_wr ? wdata_a_i : rf_reg_tmp[waddr_a_i-8];
   write_stall_1 <= write_stall;
   end
 end
@@ -196,11 +196,11 @@ always_comb begin
   cache_miss_c = 0;
   write_stall = 0;
   L1_sig_wr = 1;
-  if( raddr_a_i != 12 && raddr_a_i != 13 && raddr_a_i != 14 && raddr_a_i != 15 && !write_stall_patch  )
+  if( raddr_a_i != 8 && raddr_a_i != 9  && raddr_a_i != 10 && raddr_a_i != 11 && raddr_a_i != 12 && raddr_a_i != 13 && raddr_a_i != 14 && raddr_a_i != 15 && !write_stall_patch )
     cache_miss_a = 1;
-  if( raddr_b_i != 12 && raddr_b_i != 13 && raddr_b_i != 14 && raddr_b_i != 15 && !write_stall_patch )
+  if( raddr_b_i != 8 && raddr_b_i != 9  && raddr_b_i != 10 && raddr_b_i != 11 && raddr_b_i != 12 && raddr_b_i != 13 && raddr_b_i != 14 && raddr_b_i != 15 && !write_stall_patch )
       cache_miss_b = 1;
-  if( waddr_a_i != 12 && waddr_a_i != 13 && waddr_a_i != 14 && waddr_a_i != 15  && write_enable ) begin
+  if( waddr_a_i != 8 && waddr_a_i != 9  && waddr_a_i != 10 && waddr_a_i != 11 && waddr_a_i != 12 && waddr_a_i != 13 && waddr_a_i != 14 && waddr_a_i != 15  && write_enable ) begin
       cache_miss_c = 1;
       L1_sig_wr = 0;
   end
@@ -256,14 +256,13 @@ end
     assign rf_reg[0] = '0;
   end
 
-
   assign rdata_a_o =  raddr_a_i == 5'(0) ? rf_reg[0] :
                       rd_valid_a ? rd_buf_a : 
-                      rf_reg_tmp[raddr_a_i - 12];
+                      rf_reg_tmp[raddr_a_i - 8];
   
   assign rdata_b_o =  raddr_b_i == 5'(0) ? rf_reg[0] :
                       rd_valid_b ? rd_buf_b : 
-                      rf_reg_tmp[raddr_b_i - 12];
+                      rf_reg_tmp[raddr_b_i - 8];
 
 
   assign sig = cache_miss_a || cache_miss_b;
