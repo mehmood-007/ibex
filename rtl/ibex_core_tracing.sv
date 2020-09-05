@@ -180,7 +180,7 @@ module ibex_core_tracing #(
     .fetch_enable_i,
     .core_sleep_o
   );
-/*
+
   ibex_tracer
   u_ibex_tracer (
     .clk_i,
@@ -212,5 +212,5 @@ module ibex_core_tracing #(
     .rvfi_mem_rdata,
     .rvfi_mem_wdata
   );
-*/
+
 endmodule

@@ -605,7 +605,6 @@ module ibex_core #(
       .reg_access_i(reg_access),
 
       .reg_stall_i(reg_stall),
-      .write_stall_i(write_stall),
       .immediate_inst_o(immediate_inst)
   );
 
@@ -766,8 +765,6 @@ module ibex_core #(
       .wdata_a_i        ( rf_wdata_wb    ),
       .we_a_i           ( rf_we_wb       ),
       // hierarchy
-//      .reg_access_o(reg_access)
-
       .reg_stall_o(reg_stall),
       .pc_id_i (pc_id),
       .immediate_inst_i(immediate_inst)

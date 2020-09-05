@@ -62,7 +62,6 @@ module ibex_register_file #(
   logic cache_miss_a;
   logic cache_miss_b;
   logic cache_miss_c;
-  logic [DataWidth-1:0] l2_wdata;
 
   logic [DataWidth-1:0] rd_buf_a;
   logic [DataWidth-1:0] rd_buf_b;
@@ -179,6 +178,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
   end
 end
 
+/*
  // L2 register access
  ibex_l2_register_file l2 (
       .clk_i      (clk_i),
@@ -188,6 +188,26 @@ end
       .rdata_o    (l2_rdata),
       .we_i       (wr_valid)
   );
+*/
+logic oe;
+assign oe = 1'b0; 
+ SRAM2RW32x32 l2_sram (
+     .A1(tag),
+     .A2(),
+     .CE1(clk_i),
+     .CE2(),
+     .WEB1(~wr_valid),
+     .WEB2(),
+     .OEB1(oe),
+     .OEB2(),
+     .CSB1(1'b0),
+     .CSB2(),
+     .I1(wr_buf),
+     .I2(),
+     .O1(l2_rdata),
+     .O2()
+);
+
  // r_reg_count[r] <= (raddr_a_i == 5'(r) || raddr_b_i == 5'(r)) ? (r_reg_count[r] + 1) : r_reg_count[r];
 
 always_comb begin
@@ -214,7 +234,6 @@ assign sel_op_a = cache_miss_a && cache_miss_b ? 1 :
 
 assign sel_op_b = cache_miss_a && cache_miss_b ? 0 :
                   cache_miss_b || sel_sec_op ? 1 : 0;
-
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
