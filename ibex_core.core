@@ -41,6 +41,7 @@ filesets:
 #     - rtl/ibex_register_file_static_ff.sv
       - rtl/ibex_register_file_dynamic.sv
 #     - rtl/ibex_register_file_static_sram.sv
+      - rtl/ibex_register_file_trivial_sram.sv
       - rtl/ibex_register_file_l2.sv
       - rtl/saed32sram.v
       - rtl/ibex_core.sv
