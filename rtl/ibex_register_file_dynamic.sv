@@ -149,7 +149,7 @@ module ibex_register_file #(
 
   assign addrA = raddr_a_i;
   // sel_op_b ?  : 0;
-  assign addrB = wr_valid ? waddr : raddr_b_i;
+  assign addrB = !cache_miss_a && !cache_miss_b ? waddr : raddr_b_i;
   // sel_op_a ?
 
   assign sel_op_a = cache_miss_a && cache_miss_b ? 1 :
@@ -230,13 +230,13 @@ module ibex_register_file #(
       .CE1(clk_i),
       .CE2(clk_i),
       .WEB1(1'b1),
-      .WEB2(~wr_valid),
+      .WEB2(~write_enable), // ~wr_valid
       .OEB1(1'b0),
       .OEB2(1'b0),
       .CSB1(1'b0),
       .CSB2(1'b0),
       .I1(),
-      .I2(wr_buf),
+      .I2(wdata_a_i), // wr_buf
       .O1(l2_rdata_A),
       .O2(l2_rdata_B)
   );
@@ -315,8 +315,8 @@ module ibex_register_file #(
 
   generate
     for ( i = CACHE_LEN - 1; i >= 0 ; i-- ) begin
-      assign tag_a[i][1:0] = ~cache_a_match_comb[i] == 1'b0 ? i : tag_a[i+1][1:0];
-      assign tag_b[i][1:0] = ~cache_b_match_comb[i] == 1'b0 ? i : tag_b[i+1][1:0];
+      assign tag_a[i][1:0] = cache_a_match_comb[i] == 1'b1 ? i : tag_a[i+1][1:0];
+      assign tag_b[i][1:0] = cache_b_match_comb[i] == 1'b1 ? i : tag_b[i+1][1:0];
       assign tag_c[i][1:0] = cache_c_match_comb[i] == 1'b1 ? i : tag_c[i+1][1:0];
     end
   endgenerate
