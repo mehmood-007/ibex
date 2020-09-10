@@ -141,16 +141,14 @@ module ibex_register_file #(
 
 assign new_inst = temp_pc_id != pc_id_i && !write_stall_1 ? 1 : 0;
 assign write_enable = |we_a_dec;
-assign addr = wr_valid ? waddr :
-              sel_op_a ? raddr_a_i :
-              sel_op_b ? raddr_b_i : 0;
+//assign addr = wr_valid ? waddr :
+//              sel_op_a ? raddr_a_i :
+//              sel_op_b ? raddr_b_i : 0;
 
-  assign addrA = raddr_a_i;
-  // sel_op_b ?  : 0;
-  assign addrB = wr_valid ? waddr : raddr_b_i;
-  // sel_op_a ?
-  
-
+assign addrA = raddr_a_i;
+// sel_op_b ?  : 0;
+assign addrB = write_enable ? waddr_a_i : raddr_b_i;
+// sel_op_a ?
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
@@ -187,13 +185,15 @@ end
       .CE1(clk_i),
       .CE2(clk_i),
       .WEB1(1'b1),
-      .WEB2(~wr_valid),
+      .WEB2(!(write_enable && !L1_sig_wr)),
+    //.WEB2(~wr_valid),
       .OEB1(1'b0),
       .OEB2(1'b0),
       .CSB1(1'b0),
       .CSB2(1'b0),
       .I1(),
-      .I2(wr_buf),
+      .I2(wdata_a_i),
+     // .I2(wr_buf),
       .O1(l2_rdata_A),
       .O2(l2_rdata_B)
   );
@@ -208,12 +208,14 @@ always_comb begin
   temp_reg_b = rf_reg_tmp[raddr_b];
   // && raddr_a_i != 13 && raddr_a_i != 14 && raddr_a_i != 15
  // raddr_a_i[4:3] != 2'b01 
-  if( raddr_a_i[4:2] != 3'b011 && !write_stall_1  ) begin
+//  if( raddr_a_i[4:2] != 2'b011 && !write_stall_1  ) begin
+  if( raddr_a_i[4:2] != 3'b011 && raddr_a_i!= 5'b00000 ) begin
     cache_miss_a = 1;
     temp_reg_a = l2_rdata_A;
   end
   // && raddr_b_i != 13 && raddr_b_i != 14 && raddr_b_i != 15
-  if( raddr_b_i[4:2] != 3'b011 && !write_stall_1 ) begin
+//  if( raddr_b_i[4:2] != 2'b011 && !write_stall_1 ) begin
+  if( raddr_b_i[4:2] != 3'b011  && raddr_b_i != 5'b00000) begin
       cache_miss_b = 1;
       temp_reg_b = l2_rdata_B;
   end
@@ -225,7 +227,7 @@ always_comb begin
 
   cache_miss_a = new_inst ? cache_miss_a : 0;
   cache_miss_b = new_inst && !immediate_inst_i ? cache_miss_b : 0;
-  write_stall = cache_miss_c && !cnt ? 1 : 0;
+//  write_stall = 0;//cache_miss_c && !cnt ? 1 : 0;
 end
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
@@ -291,6 +293,6 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     shift_1 <= write_stall_1;
 end
 
-assign write_stall_o = pe ? shift_1 : write_stall_1;
+assign write_stall_o = 0;//pe ? shift_1 : write_stall_1;
 assign reg_stall_o = pe || write_stall_o ;
 endmodule
