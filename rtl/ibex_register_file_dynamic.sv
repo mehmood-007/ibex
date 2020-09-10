@@ -149,15 +149,15 @@ module ibex_register_file #(
 
   assign addrA = raddr_a_i;
   // sel_op_b ?  : 0;
-  assign addrB = !cache_miss_a && !cache_miss_b ? waddr : raddr_b_i;
+  assign addrB = !cache_miss_b ? waddr_a_i : raddr_b_i;
   // sel_op_a ?
-
+/*
   assign sel_op_a = cache_miss_a && cache_miss_b ? 1 :
                   cache_miss_a ? 1 : 0;
 
   assign sel_op_b = cache_miss_a && cache_miss_b ? 0 :
                     cache_miss_b || sel_sec_op ? 1 : 0;
-
+*/
   // loop from 1 to NUM_WORDS-1 as R0 is nil
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
@@ -166,20 +166,24 @@ module ibex_register_file #(
       write_stall_1 <= 0;
     end
     else begin
+      if ( write_enable && |cache_c_match_comb && cache_miss_a_ && tag_c[0] == counter_a)
+        rf_reg_tmp[tag_c[0]] <= wdata_a_i;
+      else begin
+        if ( write_enable && |cache_c_match_comb)
+          rf_reg_tmp[tag_c[0]] <= wdata_a_i;
         if ( cache_miss_a_ )
-            rf_reg_tmp[counter_a] <= l2_rdata_A;
-        else if ( write_stall_1 && |cache_c_match_comb)
-            rf_reg_tmp[tag_c[0]] <= wr_buf;
-        write_stall_1 <= write_stall;
+          rf_reg_tmp[counter_a] <= l2_rdata_A;
+      end      
+    write_stall_1 <= write_stall;
     end
   end
   
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      sel_sec_op <= 0;
+     // sel_sec_op <= 0;
       cache_miss_a_ <= 0;
     end else begin
-      sel_sec_op <= (cache_miss_a && cache_miss_b) ? 1 : 0;
+    //  sel_sec_op <= (cache_miss_a && cache_miss_b) ? 1 : 0;
       cache_miss_a_ <= cache_miss_a;
     end
   end
@@ -198,8 +202,8 @@ module ibex_register_file #(
     //    rd_valid_a <= 0;
     //    rd_buf_b <= '{default:'0};
     //    rd_valid_b <= 0;
-        wr_buf <= '{default:'0};
-        wr_valid <= 0;
+     //   wr_buf <= '{default:'0};
+     //   wr_valid <= 0;
     end else begin
     //    rd_buf_a <= l2_rdata_A;// : rd_buf_a;
     //    rd_buf_b <= l2_rdata_B;// : rd_buf_b;
@@ -209,8 +213,8 @@ module ibex_register_file #(
     //    rd_valid_b <= sel_op_b ? 1 : 
     //                 pe || pe2 ? rd_valid_b : 
     //                  0;
-        wr_buf  <= cache_miss_c ? wdata_a_i : wr_buf;
-        wr_valid <= cache_miss_c ? 1 : 0;
+      //  wr_buf  <= cache_miss_c ? wdata_a_i : wr_buf;
+      //  wr_valid <= cache_miss_c ? 1 : 0;
     end
   end
   /*
@@ -305,7 +309,7 @@ module ibex_register_file #(
     for ( i = 0; i < CACHE_LEN; i++ ) begin
       assign cache_a_match_comb[i] = (cache_1_index_1[i] == raddr_a_i && raddr_a_i != '0 && !write_stall_1 ) ? 1 : 0;
       assign cache_b_match_comb[i] = (cache_1_index_1[i] == raddr_b_i && raddr_b_i != '0 && !write_stall_1 ) ? 1 : 0;
-      assign cache_c_match_comb[i] = (cache_1_index_1[i] == waddr && write_stall_1) ? 1 : 0;
+      assign cache_c_match_comb[i] = (cache_1_index[i] == waddr_a_i && write_enable) ? 1 : 0;
 
 //      assign tag_a[i] = (cache_1_index[i] == raddr_a_i && raddr_a_i != '0) ? i : tag_a[i+1];
 //      assign tag_b[i] = (cache_1_index[i] == raddr_b_i && raddr_b_i != '0) ? i : tag_b[i+1];
@@ -348,7 +352,7 @@ always @( * ) begin
   cache_miss_b = 0;
   cache_miss_c = 0;
 
-  if( cache_a_match == 1 )
+  if( cache_a_match == 1 && !cache_miss_a_)
     temp_reg_a = rf_reg_tmp[tag_a[0]];
   else if( cache_a_match == 0 && raddr_a_i != 0 && !write_stall_1) begin // doesn't exist in cache
     cache_miss_a = 1;
@@ -358,7 +362,7 @@ always @( * ) begin
 
   if( cache_b_match == 1 )
     temp_reg_b =  rf_reg_tmp[tag_b[0]];
-  else if( cache_b_match == 0 && raddr_b_i != 5'h0 && !immediate_inst_i) begin // doesn't exist in cache
+  else if( cache_b_match == 0 && raddr_b_i != 5'h0 ) begin // doesn't exist in cache
     cache_miss_b = 1;
    // cache_1_index[counter_b] = raddr_b_i;
    // cache_1[counter_b] = temp_reg_b;
@@ -368,7 +372,7 @@ always @( * ) begin
   // $display( "Cache miss, stall %d, addr %d ", reg_stall[reg_address_a], reg_address_a );
   end
   // cache_c_match == 0 &&
-  cache_miss_c = waddr_a_i != 0 && write_enable ? 1 : 0;
+ // cache_miss_c = waddr_a_i != 0 && write_enable ? 1 : 0;
 
   if(cache_miss_c) begin
    // cache_1_index[counter_a] = waddr_a_i;
@@ -379,7 +383,7 @@ always @( * ) begin
 end
 
 assign L1_sig_wr = ~cache_miss_c;
-assign write_stall = cache_miss_c && !cnt ? 1 : 0;
+assign write_stall = 0;//cache_miss_c && !cnt ? 1 : 0;
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
@@ -460,9 +464,9 @@ end
 	assign pe = sig & ~sig_dly;
 	assign pe2 = 0;//two_op_signal;
 
-  assign cache_1_index[counter_a] = cache_a_match == 0 && raddr_a_i != 0 && !write_stall_1 && !pe? 
+  assign cache_1_index[counter_a] = cache_miss_a_ && raddr_a_i != 0 ? 
                                     raddr_a_i : cache_1_index[counter_a];
-
+/*
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       shift_1 <= 0;
@@ -473,10 +477,10 @@ end
       shift_2 <= shift_1;
     end
 	end
+*/
+  assign write_stall_o =  0;//pe ? shift_1 :
+ //                         pe2 ? shift_2 : write_stall_1;
 
-  assign write_stall_o =  pe ? shift_1 :
-                          pe2 ? shift_2 : write_stall_1;
-
-  assign reg_stall_o = pe || pe2 || write_stall_o;
+  assign reg_stall_o = pe ;//|| pe2 || write_stall_o;
 
 endmodule​

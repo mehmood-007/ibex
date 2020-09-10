@@ -34,7 +34,14 @@ module ibex_register_file #(
     // Write port W1
     input  logic [4:0]           waddr_a_i,
     input  logic [DataWidth-1:0] wdata_a_i,
-    input  logic                 we_a_i
+    input  logic                 we_a_i,
+ 
+    // PC to identify new instrctions
+    input  logic [31:0]               pc_id_i,
+    // immediate instrction flag
+    input  logic                      immediate_inst_i,
+    // reg stall
+    output logic reg_stall_o
 
 );
 

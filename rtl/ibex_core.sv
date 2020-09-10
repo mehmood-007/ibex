@@ -743,6 +743,7 @@ module ibex_core #(
     .instr_done_wb_o            ( instr_done_wb            )
   );
 
+
   ibex_register_file #(
       .RV32E             (RV32E),
       .DataWidth         (32),
