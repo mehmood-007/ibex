@@ -21,7 +21,8 @@ module ibex_l2_register_file #(
 
 );
 
-  parameter int unsigned NUM_WORDS = 24;
+  localparam int unsigned SIZE_REG = 4;
+  parameter int unsigned NUM_WORDS = 32-SIZE_REG;
   logic [NUM_WORDS-1:1][DataWidth-1:0] rf_reg;
   logic [NUM_WORDS-1:1]                we_dec;
   logic [DataWidth-1:0] rdata;

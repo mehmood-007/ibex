@@ -7,7 +7,7 @@ COMMON_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 COMMON_SRCS = $(wildcard $(COMMON_DIR)/*.c)
 INCS := -I$(COMMON_DIR)
 
-# ARCH = rv32im # to disable compressed instructions
+#ARCH = rv32im # to disable compressed instructions
 ARCH ?= rv32imac
 
 ifdef PROGRAM
