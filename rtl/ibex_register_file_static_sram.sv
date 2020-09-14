@@ -87,11 +87,6 @@ module ibex_register_file #(
   logic [3:0] cycle_count;
   logic sig_dly, pe, pe2, sig;
   logic two_op_signal;
-
-  logic write_stall;
-  logic write_stall_1;
-  logic write_stall_patch;
-  
   logic [4:0] tag;
   logic [4:0] addr;
 
@@ -106,7 +101,6 @@ module ibex_register_file #(
   logic wr_valid;
 
   logic sel_sec_op;
-  logic write_enable;
   logic cnt, temp;
 
   logic [4:0] addrA;
@@ -135,47 +129,26 @@ module ibex_register_file #(
         temp_pc_id <= '{default:'0};
     end
     else begin
-        temp_pc_id <= temp_pc_id != pc_id_i && !write_stall_1 ? pc_id_i : temp_pc_id; 
+        temp_pc_id <= temp_pc_id != pc_id_i  ? pc_id_i : temp_pc_id; 
     end
   end
 
-assign new_inst = temp_pc_id != pc_id_i && !write_stall_1 ? 1 : 0;
-assign write_enable = |we_a_dec;
+assign new_inst = temp_pc_id != pc_id_i  ? 1 : 0;
 //assign addr = wr_valid ? waddr :
 //              sel_op_a ? raddr_a_i :
 //              sel_op_b ? raddr_b_i : 0;
 
 assign addrA = raddr_a_i;
-// sel_op_b ?  : 0;
-assign addrB = write_enable ? waddr_a_i : raddr_b_i;
-// sel_op_a ?
+assign addrB = we_a_i ? waddr_a_i : raddr_b_i;
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni) begin
-    waddr <= '0;
-  end else begin
-    waddr <= waddr_a_i;
-  end
-end
-
-always_ff @(posedge clk_i or negedge rst_ni) begin: buffers
-  if (!rst_ni) begin
-    wr_buf <= '{default:'0};
-    wr_valid <= 0;
-  end else begin
-    wr_buf  <= write_enable && !L1_sig_wr ? wdata_a_i : 0;
-    wr_valid <= write_enable && !L1_sig_wr ? 1 : 0;
-  end
-end
-
-always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni) begin
+  if (!rst_ni)
     rf_reg_tmp <= '{default:'0};
-    write_stall_1 <= 0;
-  end else begin
-    if ( write_enable && L1_sig_wr )
-      rf_reg_tmp[waddr_a] <= wdata_a_i;
-  write_stall_1 <= write_stall;
+  else begin
+    for (int r = 12; r < 16; r++) begin
+      if ( we_a_dec[r] )
+        rf_reg_tmp[r] <= wdata_a_i;
+    end
   end
 end
 
@@ -185,7 +158,7 @@ end
       .CE1(clk_i),
       .CE2(clk_i),
       .WEB1(1'b1),
-      .WEB2(!(write_enable && !L1_sig_wr)),
+      .WEB2(!(we_a_i && !L1_sig_wr)),
     //.WEB2(~wr_valid),
       .OEB1(1'b0),
       .OEB2(1'b0),
@@ -202,7 +175,6 @@ always_comb begin
   cache_miss_a = 0;
   cache_miss_b = 0;
   cache_miss_c = 0;
-  write_stall = 0;
   L1_sig_wr = 1;
   temp_reg_a = rf_reg_tmp[raddr_a];
   temp_reg_b = rf_reg_tmp[raddr_b];
@@ -220,7 +192,7 @@ always_comb begin
       temp_reg_b = l2_rdata_B;
   end
   // && waddr_a_i != 13 && waddr_a_i != 14 && waddr_a_i != 15 
-  if( waddr_a_i[4:2] != 3'b011  && write_enable ) begin
+  if( waddr_a_i[4:2] != 3'b011 ) begin
       cache_miss_c = 1;
       L1_sig_wr = 0;
   end
@@ -228,18 +200,6 @@ always_comb begin
   cache_miss_a = new_inst ? cache_miss_a : 0;
   cache_miss_b = new_inst && !immediate_inst_i ? cache_miss_b : 0;
 //  write_stall = 0;//cache_miss_c && !cnt ? 1 : 0;
-end
-
-always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni) begin
-      cnt <= 0;
-  end
-  else begin
-    if(write_stall && !cnt)
-      cnt <= ~cnt;
-    else if(!write_stall)
-      cnt <= 0;
-  end
 end
 
   // With dummy instructions enabled, R0 behaves as a real register but will always return 0 for
@@ -285,14 +245,5 @@ end
  // Combinational logic where sig is AND with delayed, inverted version of sig
 // Assign statement assigns the evaluated expression in the RHS to the internal net pe
 assign pe = sig & ~sig_dly;
-
-always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni)
-    shift_1 <= 0;
-  else
-    shift_1 <= write_stall_1;
-end
-
-assign write_stall_o = 0;//pe ? shift_1 : write_stall_1;
-assign reg_stall_o = pe || write_stall_o ;
+assign reg_stall_o = pe ;
 endmodule
