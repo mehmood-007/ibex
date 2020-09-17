@@ -186,6 +186,8 @@ module ibex_id_stage #(
 
     input logic                       reg_stall_i,
 
+    input logic                       write_stall_i, 
+
     output logic                       immediate_inst_o
 );
 
@@ -850,18 +852,24 @@ logic bypass_reg_we;
         end
 
         MULTI_CYCLE: begin
-          if(multdiv_en_dec)
+          if(multdiv_en_dec) begin
             rf_we_raw       = rf_we_dec & ex_valid_i;
-          if (multicycle_done & ready_wb_i)
+          end
+          if (multicycle_done & ready_wb_i) begin
             id_fsm_d        = FIRST_CYCLE;
-          else begin
+          end else begin
             stall_multdiv   = multdiv_en_dec;
             stall_branch    = branch_in_dec;
             stall_jump      = jump_in_dec;
           end
+       //   if (write_stall_i == 0 ) begin
+       //    id_fsm_d        = FIRST_CYCLE;
+       //    stall_register = 1'b0;
+        //  end 
         end
-        default:
+        default: begin
           id_fsm_d          = FIRST_CYCLE;
+        end
       endcase
     end
   end

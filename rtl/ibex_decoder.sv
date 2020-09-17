@@ -1072,8 +1072,8 @@ module ibex_decoder #(
   end
 
   // do not enable multdiv in case of illegal instruction exceptions
-  assign mult_en_o = illegal_insn ? 1'b0 : mult_sel_o;
-  assign div_en_o  = illegal_insn ? 1'b0 : div_sel_o;
+  assign mult_en_o = illegal_insn || reg_stall_i ? 1'b0 : mult_sel_o;
+  assign div_en_o  = illegal_insn || reg_stall_i ? 1'b0 : div_sel_o;
 
   // make sure instructions accessing non-available registers in RV32E cause illegal
   // instruction exceptions
