@@ -115,7 +115,7 @@ module ibex_register_file #(
     end
   end
 
-assign write_enable = |we_a_dec;
+//assign write_enable = |we_a_dec;
 
 logic new_inst;
 logic [31:0] temp_pc_id;
@@ -133,7 +133,7 @@ assign new_inst = temp_pc_id != pc_id_i && !write_stall_patch ? 1 : 0;
 
 logic [4:0] waddr;
 assign addr = //wr_valid ? waddr :
-              write_enable ? waddr_a_i :
+              we_a_i ? waddr_a_i :
               sel_op_a ? raddr_a_i :
               sel_op_b ? raddr_b_i : waddr_a_i;
 
@@ -144,7 +144,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     sel_sec_op <= (cache_miss_a && cache_miss_b) ? 1 : 0;
   end
 end
-
+/*
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     waddr <= '0;
@@ -152,15 +152,15 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     waddr <= waddr_a_i;
   end
 end
-
+*/
 always_ff @(posedge clk_i or negedge rst_ni) begin: buffers
   if (!rst_ni) begin
     rd_buf_a <= '{default:'0};
     rd_valid_a <= 0;
     rd_buf_b <= '{default:'0};
     rd_valid_b <= 0;
-    wr_buf <= '{default:'0};
-    wr_valid <= 0;
+//    wr_buf <= '{default:'0};
+//    wr_valid <= 0;
   end else begin
     rd_buf_a <= sel_op_a ? l2_rdata : rd_buf_a;
     rd_valid_a <= sel_op_a ? 1 : 
@@ -180,16 +180,16 @@ assign raddr_a = raddr_a_i[$clog2(SIZE_REG)-1:0];
 assign raddr_b = raddr_b_i[$clog2(SIZE_REG)-1:0];
 assign waddr_a = waddr_a_i[$clog2(SIZE_REG)-1:0];
 
-assign tag = addr[4] != 1'b1 ? addr: addr - 4;
+assign tag = addr[4] == 1'b1 ? addr + 5'b11100: addr;
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     rf_reg_tmp <= '{default:'0};
-    write_stall_1 <= 0;
   end else begin
-    if ( write_enable && L1_sig_wr )
-      rf_reg_tmp[waddr_a] <= wdata_a_i;
-  write_stall_1 <= write_stall;
+    for (int r = 12; r < 16; r++) begin
+      if ( we_a_dec[r] )
+        rf_reg_tmp[r] <= wdata_a_i;
+    end
   end
 end
 
@@ -200,35 +200,31 @@ end
       .addr_i     (tag),
       .wdata_i    (wdata_a_i),
       .rdata_o    (l2_rdata),
-      .we_i       (write_enable)
+      .we_i       (we_a_i & !L1_sig_wr)
   );
  // r_reg_count[r] <= (raddr_a_i == 5'(r) || raddr_b_i == 5'(r)) ? (r_reg_count[r] + 1) : r_reg_count[r];
 
 always_comb begin
   cache_miss_a = 0;
   cache_miss_b = 0;
-  cache_miss_c = 0;
   write_stall = 0;
   L1_sig_wr = 1;
 
   temp_reg_a = rf_reg_tmp[raddr_a_i];
   temp_reg_b = rf_reg_tmp[raddr_b_i];
 
-  if( raddr_a_i[4:2] != 3'b011 && raddr_a_i != 5'b00000 && !write_stall_patch  ) begin
+  if( raddr_a_i[4:2] != 3'b011 && raddr_a_i != 5'b00000   ) begin
     cache_miss_a = 1;
     temp_reg_a = rd_buf_a;
   end
-  if( raddr_b_i[4:2] != 3'b011 && raddr_b_i != 5'b00000 && !write_stall_patch ) begin
-      cache_miss_b = 1;
-      temp_reg_b = rd_buf_b;//l2_rdata;
+  if( raddr_b_i[4:2] != 3'b011 && raddr_b_i != 5'b00000 ) begin
+    cache_miss_b = 1;
+    temp_reg_b = rd_buf_b;//l2_rdata;
   end
-  if( waddr_a_i[4:2] != 2'b011 && waddr_a_i != 5'b00000 && write_enable ) begin
-      cache_miss_c = 1;
-      L1_sig_wr = 0;
-  end
-  cache_miss_a = new_inst ? cache_miss_a : 0; // && raddr_a_i != 5'b00000
-  cache_miss_b = new_inst && !immediate_inst_i ? cache_miss_b : 0;
-  write_stall = 0;//ache_miss_c && !cnt ? 1 : 0;
+  if( waddr_a_i[4:2] != 3'b011 ) 
+    L1_sig_wr = 0;
+    cache_miss_a = new_inst ? cache_miss_a : 0;
+    cache_miss_b = new_inst && !immediate_inst_i ? cache_miss_b : 0;
 end
 
 assign sel_op_a = cache_miss_a && cache_miss_b ? 1 :
@@ -236,18 +232,6 @@ assign sel_op_a = cache_miss_a && cache_miss_b ? 1 :
 
 assign sel_op_b = cache_miss_a && cache_miss_b ? 0 :
                   cache_miss_b || sel_sec_op ? 1 : 0;
-
-always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni) begin
-      cnt <= 0;
-  end
-  else begin
-    if(write_stall && !cnt)
-      cnt <= ~cnt;
-    else if(!write_stall)
-      cnt <= 0;
-  end
-end
 
   // With dummy instructions enabled, R0 behaves as a real register but will always return 0 for
   // real instructions.
@@ -277,7 +261,7 @@ end
     assign rf_reg[0] = '0;
   end
 
-  assign rdata_a_o =  raddr_a_i == 5'(0) ? rf_reg[0] : temp_reg_a;  
+  assign rdata_a_o =  raddr_a_i == 5'(0) ? rf_reg[0] : temp_reg_a;
   assign rdata_b_o =  raddr_b_i == 5'(0) ? rf_reg[0] : temp_reg_b;
 
   assign sig = cache_miss_a || cache_miss_b;
@@ -298,22 +282,6 @@ end
 assign pe = sig & ~sig_dly;
 assign pe2 = two_op_signal;
 
-logic shift_1, shift_2;
-  always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni) begin
-      shift_1 <= 0;
-      shift_2 <= 0;
-    end
-    else begin
-    	shift_1 <= write_stall_1;
-      shift_2 <= shift_1;
-    end
-	end
-
-  assign write_stall_patch = write_stall_1;
-  assign write_stall_o = pe ? shift_1 : 
-                         pe2 ? shift_2 : write_stall_1;
-  assign reg_stall_o = pe || pe2 || write_stall_o ;
- // assign reg_access_o = reg_access;
+assign reg_stall_o = pe || pe2 ;
   
 endmodule
