@@ -50,7 +50,7 @@ module ibex_register_file #(
   logic [31:0]  reg_stall;
   logic [31:0]  reg_stall_;
   
-  localparam int unsigned SIZE_REG = 4;
+  localparam int unsigned SIZE_REG = 8;
 
   localparam int unsigned ADDR_WIDTH = RV32E ? 4 : 5;
   localparam int unsigned NUM_WORDS  = 2**ADDR_WIDTH;
@@ -145,7 +145,8 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni)
     rf_reg_tmp <= '{default:'0};
   else begin
-    for (int r = 12; r < 16; r++) begin
+//    for (int r = 12; r < 16; r++) begin
+    for (int r = 8; r < 16; r++) begin
       if ( we_a_dec[r] )
         rf_reg_tmp[r] <= wdata_a_i;
     end
@@ -181,18 +182,21 @@ always_comb begin
   // && raddr_a_i != 13 && raddr_a_i != 14 && raddr_a_i != 15
  // raddr_a_i[4:3] != 2'b01 
 //  if( raddr_a_i[4:2] != 2'b011 && !write_stall_1  ) begin
-  if( raddr_a_i[4:2] != 3'b011 && raddr_a_i!= 5'b00000 ) begin
+//  if( raddr_a_i[4:2] != 2'b011 && raddr_a_i!= 5'b00000 ) begin
+  if( raddr_a_i[4:3] != 2'b01 && raddr_a_i!= 5'b00000 ) begin
     cache_miss_a = 1;
     temp_reg_a = l2_rdata_A;
   end
   // && raddr_b_i != 13 && raddr_b_i != 14 && raddr_b_i != 15
 //  if( raddr_b_i[4:2] != 2'b011 && !write_stall_1 ) begin
-  if( raddr_b_i[4:2] != 3'b011  && raddr_b_i != 5'b00000) begin
+//  if( raddr_b_i[4:2] != 3'b011  && raddr_b_i != 5'b00000) begin
+   if( raddr_b_i[4:3] != 2'b01  && raddr_b_i != 5'b00000) begin
       cache_miss_b = 1;
       temp_reg_b = l2_rdata_B;
   end
   // && waddr_a_i != 13 && waddr_a_i != 14 && waddr_a_i != 15 
-  if( waddr_a_i[4:2] != 3'b011 ) begin
+  //if( waddr_a_i[4:2] != 3'b011 ) begin
+  if( waddr_a_i[4:3] != 2'b01 ) begin
       cache_miss_c = 1;
       L1_sig_wr = 0;
   end

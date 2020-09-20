@@ -429,7 +429,9 @@ module ibex_core #(
       // pipeline stalls
       .id_in_ready_i            ( id_in_ready            ),
 
-      .if_busy_o                ( if_busy                )
+      .if_busy_o                ( if_busy                ),
+
+      .instr_out_o              (instr_out)
   );
 
   // Core is waiting for the ISide when ID/EX stage is ready for a new instruction but none are
@@ -768,6 +770,7 @@ module ibex_core #(
       .reg_stall_o(reg_stall),
       .pc_id_i (pc_id),
       .immediate_inst_i(immediate_inst)
+      ///.pref_inst_i(instr_out)
   );
 
   // Explict INC_ASSERT block to avoid unused signal lint warnings were asserts are not included

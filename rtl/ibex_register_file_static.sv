@@ -50,7 +50,7 @@ module ibex_register_file #(
   logic [31:0]  reg_stall;
   logic [31:0]  reg_stall_;
   
-  localparam int unsigned SIZE_REG = 4;
+  localparam int unsigned SIZE_REG = 8;
   localparam int unsigned ADDR_WIDTH = RV32E ? 4 : 5;
   localparam int unsigned NUM_WORDS  = 2**ADDR_WIDTH;
 

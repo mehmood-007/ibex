@@ -50,6 +50,8 @@ module ibex_register_file #(
   logic [31:0]  reg_stall;
   logic [31:0]  reg_stall_;
 
+
+
   localparam int unsigned REG_SZ = 4;
   localparam int unsigned ADDR_WIDTH = RV32E ? 4 : 5;
   localparam int unsigned NUM_WORDS  = 2**ADDR_WIDTH;
@@ -103,13 +105,12 @@ module ibex_register_file #(
   logic new_inst;
   logic [31:0] temp_pc_id;
   logic [4:0] waddr;
-  logic [$clog2(REG_SZ)-1:0] l1_reg_waddr;
 
   logic [DataWidth-1:0]  t_rdata_a_o;
   logic [DataWidth-1:0]  t_rdata_b_o;
     
   always_comb begin : we_a_decoder
-    for (int unsigned i = 1; i < REG_SZ; i++) begin
+    for (int unsigned i = 1; i < NUM_WORDS; i++) begin
       we_a_dec[i] = waddr_a_i == 5'(i) ?  we_a_i : 1'b0;
     end
   end
@@ -124,16 +125,8 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
         temp_pc_id <= temp_pc_id != pc_id_i && !write_stall_patch ? pc_id_i : temp_pc_id; 
 end
 
-assign new_inst = temp_pc_id != pc_id_i && !write_stall_patch ? 1 : 0;
-assign addr = wr_valid ? waddr :
-               raddr_b_i ;
-
-always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni)
-    waddr <= '0;
-  else
-    waddr <= waddr_a_i;
-end
+assign new_inst = temp_pc_id != pc_id_i ? 1 : 0;
+assign addr = write_enable ? waddr_a_i : raddr_b_i ;
 
 always_ff @(posedge clk_i or negedge rst_ni) begin: buffers
   if (!rst_ni) begin
@@ -147,43 +140,19 @@ end
 
 assign tag = addr; //< 8 ? addr: 8 + (addr-15);
 //assign L1_sig_wr = ( waddr_a_i == 12 || waddr_a_i == 13 || waddr_a_i == 14 || waddr_a_i == 15 ) ? 1 : 0;
-
-always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni) begin
-   // rf_reg_tmp <= '{default:'0};
-    write_stall_1 <= 0;
-  end else begin
-   // if ( write_enable )
-     // rf_reg_tmp[l1_reg_waddr] <= L1_sig_wr ? wdata_a_i : rf_reg_tmp[l1_reg_waddr];
-  write_stall_1 <= write_stall;
-  end
-end
-
-/*
- // L2 register access
- ibex_l2_register_file l2 (
-      .clk_i      (clk_i),
-      .rst_ni     (rst_ni),
-      .addr_i     (tag),
-      .wdata_i    (wr_buf),
-      .rdata_o    (l2_rdata),
-      .we_i       (wr_valid)
-  );
-*/
-
  SRAM2RW32x32 l2_sram (
      .A1(raddr_a_i),
      .A2(addr),
      .CE1(clk_i),
      .CE2(clk_i),
-     .WEB1(),
-     .WEB2(~wr_valid),
+     .WEB1(1'b1),
+     .WEB2(~write_enable),
      .OEB1(1'b0),
      .OEB2(1'b0),
      .CSB1(1'b0),
      .CSB2(1'b0),
      .I1(),
-     .I2(wr_buf),
+     .I2(wdata_a_i),
      .O1(t_rdata_a_o),
      .O2(t_rdata_b_o)
 );
@@ -191,18 +160,6 @@ end
  // r_reg_count[r] <= (raddr_a_i == 5'(r) || raddr_b_i == 5'(r)) ? (r_reg_count[r] + 1) : r_reg_count[r];
 assign cache_miss_b = new_inst ? 1 : 0;
 assign sel_op_b = cache_miss_b ? 1 : 0;
-
-always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni) begin
-      cnt <= 0;
-  end
-  else begin
-    if(write_stall && !cnt)
-      cnt <= ~cnt;
-    else if(!write_stall)
-      cnt <= 0;
-  end
-end
 
   // With dummy instructions enabled, R0 behaves as a real register but will always return 0 for
   // real instructions.
@@ -240,16 +197,14 @@ end
                  //     rf_reg_tmp[raddr_b_i[$clog2(REG_SZ)-1:0]];
 
 
-  assign sig = cache_miss_b;
+  assign sig = new_inst;
     // This always block ensures that sig_dly is exactly 1 clock behind sig
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       sig_dly <= 0;
-      two_op_signal <= 0;
     end
     else begin
       sig_dly <= sig;
-      two_op_signal <= cache_miss_b;
     end
   end
 
@@ -257,23 +212,7 @@ end
 // Assign statement assigns the evaluated expression in the RHS to the internal net pe
   assign pe = sig & ~sig_dly; 
   assign pe2 = 0;//two_op_signal;
-
-  logic shift_1, shift_2;
-  always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni) begin
-      shift_1 <= 0;
-      shift_2 <= 0;
-    end
-    else begin
-      shift_1 <= write_stall_1;
-      shift_2 <= shift_1;
-    end
-  end
-
-  assign write_stall_patch = write_stall_1;
-  assign write_stall_o = pe ? shift_1 : 
-                         pe2 ? shift_2 : write_stall_1;
-  assign reg_stall_o = pe || pe2 || write_stall_o ;
- // assign reg_access_o = reg_access;
+  assign reg_stall_o = pe || pe2;
+  // assign reg_access_o = reg_access;
   
 endmodule
