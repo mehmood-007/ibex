@@ -3,6 +3,12 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
+
+// Source/Destination register instruction index
+`define REG_S1 19:15
+`define REG_S2 24:20
+`define REG_S3 31:27
+
 /**
  * RISC-V register file
  *
@@ -43,7 +49,11 @@ module ibex_register_file #(
     input  logic                      immediate_inst_i,
 
     // reg stall
-    output logic reg_stall_o
+    output logic reg_stall_o,
+
+    input logic [31:0] pref_inst_i,
+
+    input logic instr_new_id_d_i
 );
   parameter int CACHE_LEN = 4;
   localparam int unsigned ADDR_WIDTH = RV32E ? 4 : 5;
@@ -54,8 +64,7 @@ module ibex_register_file #(
   logic [31:0]  reg_stall;
   logic [31:0]  reg_stall_;
   
-  logic [CACHE_LEN-1:0][4:0] cache_1_index ;
-  logic [CACHE_LEN-1:0][4:0] cache_1_index_1 ;
+  logic [CACHE_LEN-1:0][4:0] cache_1_index;
   // int qu[$];
 
   logic [NUM_WORDS-1:0][DataWidth-1:0] rf_reg;
@@ -75,7 +84,10 @@ module ibex_register_file #(
 
   logic [CACHE_LEN-1:0] cache_a_match_comb;
   logic [CACHE_LEN-1:0] cache_b_match_comb;
+  logic [CACHE_LEN-1:0] cache_b_match_comb_;
+
   logic [CACHE_LEN-1:0] cache_c_match_comb;
+
   logic [CACHE_LEN-1:0] cache_miss_a_dec;
 
   logic write_enable;
@@ -132,24 +144,52 @@ module ibex_register_file #(
   logic _sel_op_b;
   logic sel_op_wr;
 
+
+  logic [4:0] addrA_q;
+  logic [4:0] addrA_d;
+  logic [4:0] rf_raddr_a;
+  logic [4:0] rf_raddr_b;
+
+  logic [4:0] reg_waddr;
+  logic [31:0] reg_wdata;
+
+  logic fetch_l2_b;
+  logic instr_new_id_d_i_;
+
   always_comb begin : we_a_decoder
     for (int unsigned i = 1; i < NUM_WORDS; i++) begin
       we_a_dec[i] = waddr_a_i == 5'(i) ?  we_a_i : 1'b0;
     end
   end
 
+  assign rf_raddr_a = pref_inst_i[`REG_S1]; // rs3 / rs1
+  assign rf_raddr_b = pref_inst_i[`REG_S2]; // rs3 / rs1
+
   always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni)
-        temp_pc_id <= '{default:'0};
-    else
-        temp_pc_id <= temp_pc_id != pc_id_i ? pc_id_i : temp_pc_id;
+    if (!rst_ni) begin
+      //temp_pc_id <= '{default:'0};
+     // addrA_q <= '{default:'0};
+      instr_new_id_d_i_ <= 0;
+      fetch_l2_b <= 0;
+    end      
+    else begin
+     // addrA_q <= addrA_d;
+      //temp_pc_id <= temp_pc_id != pc_id_i ? pc_id_i : temp_pc_id;
+      instr_new_id_d_i_ <= instr_new_id_d_i;
+      reg_waddr <= we_a_i ? waddr_a_i : 
+                   reg_stall_o ? reg_waddr :
+                   '0;
+      reg_wdata <= we_a_i ? wdata_a_i : reg_wdata;
+      fetch_l2_b <= ~we_a_i & instr_new_id_d_i;
+    end      
   end
 
-  assign new_inst = temp_pc_id != pc_id_i ? 1 : 0;
- // assign write_enable = |we_a_dec;
+  assign new_inst = instr_new_id_d_i_;//temp_pc_id != pc_id_i ? 1 : 0;      
+  assign addrA_d = instr_new_id_d_i  ? rf_raddr_a : raddr_a_i; // addrA_q
 
-  assign addrA = raddr_a_i;
-  assign addrB = !cache_miss_b ? waddr_a_i : raddr_b_i;
+  assign addrA = addrA_d;
+  assign addrB = ~we_a_i & instr_new_id_d_i ? rf_raddr_b :
+                 !cache_miss_b ? waddr_a_i : raddr_b_i;
 
   // loop from 1 to NUM_WORDS-1 as R0 is nil
   always_ff @(posedge clk_i or negedge rst_ni) begin
@@ -159,14 +199,14 @@ module ibex_register_file #(
     // if ( write_enable && |cache_c_match_comb && cache_miss_a_ && tag_c[0] == counter_a)
     //   rf_reg_tmp[tag_c[0]] <= wdata_a_i;
       for (int r = 0 ; r < CACHE_LEN; r++) begin
-        if ( cache_c_match_comb[r] && cache_miss_a_dec[r])
-          rf_reg_tmp[r] <= wdata_a_i;
-        else begin
+       //if ( cache_c_match_comb[r] && cache_miss_b_dec[r])
+      //  rf_reg_tmp[r] <= wdata_a_i;
+     //   else begin
           rf_reg_tmp[r] <= cache_c_match_comb[r] ? wdata_a_i : 
-                           cache_miss_a_dec[r] ? l2_rdata_A : 
+                           cache_miss_a_dec[r] ? l2_rdata_B : 
                            rf_reg_tmp[r];
 //          rf_reg_tmp[r] <= cache_miss_a_dec[r] ? l2_rdata_A : rf_reg_tmp[r];
-        end 
+      //  end 
       end
      // else begin 
      //  if ( |cache_c_match_comb)
@@ -180,7 +220,7 @@ module ibex_register_file #(
     if (!rst_ni) begin
       cache_miss_a_ <= 0;
     end else begin
-      cache_miss_a_ <= cache_miss_a;
+      cache_miss_a_ <= cache_miss_b;
     end
   end
 
@@ -203,22 +243,18 @@ module ibex_register_file #(
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      cache_1_index_1 <= '{default:'1};
-      cache_1_index <= '{default:'1};
+     // cache_1_index_1 <= '{default:'1};
+     // cache_1_index <= '{default:'1};
       counter_a <= '{default:'0};  
     end else begin
-      for (int r = 0; r < CACHE_LEN; r++)
-        cache_1_index_1[r] <= cache_1_index[r];
-      if( cache_miss_a_ ) // counter_a >= CACHE_LEN-1 ? 0 : 
-          counter_a <= counter_a + 1;
-      cache_1_index[counter_a] <= cache_miss_a && raddr_a_i != 0 ? 
-                                  raddr_a_i : cache_1_index[counter_a];
+      //for (int r = 0; r < CACHE_LEN; r++)
+      //  cache_1_index_1[r] <= cache_1_index[r];
+      if( cache_miss_a_ ) // 
+          counter_a <= counter_a >= CACHE_LEN-1 ? 0: counter_a + 1;
+      cache_1_index[counter_a] <= cache_miss_b && raddr_b_i != 0 ? 
+                                  raddr_b_i : cache_1_index[counter_a];
     end
   end
-  
-  assign tag_a[CACHE_LEN] = 2'b11;
-  assign tag_b[CACHE_LEN] = 2'b11;
-  assign tag_c[CACHE_LEN] = 2'b11;
 
   //always_comb begin : tag_c_decoder
   //  for (int unsigned i = 0; i < CACHE_LEN; i++) begin
@@ -233,16 +269,31 @@ module ibex_register_file #(
   genvar i;
   generate
     for ( i = 0; i < CACHE_LEN; i++ ) begin
-      assign cache_a_match_comb[i] = (cache_1_index_1[i] == raddr_a_i  ) ? 1 : 0;
-      assign cache_b_match_comb[i] = (cache_1_index_1[i] == raddr_b_i  ) ? 1 : 0;
+    //  assign cache_a_match_comb[i] = (cache_1_index_1[i] == raddr_a_i  ) ? 1 : 0;
+  //    assign cache_b_match_comb[i] = ~fetch_l2_b & (cache_1_index[i] == raddr_b_i) & ~cache_miss_a_ ? 1 : 0;
       assign cache_c_match_comb[i] = (cache_1_index[i] == waddr_a_i ) ? we_a_i : 0;
       assign cache_miss_a_dec[i] = counter_a == i  ?  cache_miss_a_ : 1'b0;
-    /*  comparator comp1(
-        .A(cache_1_index_1[i]),
-        .B(raddr_a_i), 
-        .equal_signal(cache_a_match_comb[i])
+
+/*      comparator comp3(
+        .A(cache_1_index[i] & we_a_i),
+        .B(waddr_a_i), 
+        .equal_signal(cache_c_match_comb[i])
+     );*/
+     comparator comp1(
+        .A(cache_1_index[i]),
+        .B(raddr_b_i ),
+        .equal_signal( cache_b_match_comb_[i]  )
      );
-      comparator comp2(
+     assign cache_b_match_comb[i] = ~fetch_l2_b & cache_b_match_comb_[i] & ~cache_miss_a_;
+
+     /* comparator comp1(
+        .A(cache_1_index[i]),
+        .B(raddr_b_i),
+        .equal_signal(cache_b_match_comb[i])
+     );
+
+      */
+/*      comparator comp2(
         .A(cache_1_index_1[i]),
         .B(raddr_b_i), 
         .equal_signal(cache_b_match_comb[i])
@@ -264,43 +315,27 @@ module ibex_register_file #(
     end
   endgenerate
 */
-assign cache_a_match = |cache_a_match_comb;
+//assign cache_a_match = |cache_a_match_comb;
 assign cache_b_match = |cache_b_match_comb;
 
 always @( * ) begin
   reg_address_a = '0;
   reg_address_b = '0;
-  temp_reg_a = l2_rdata_A;;
-  temp_reg_b = l2_rdata_B;;
+  temp_reg_b = l2_rdata_B;
   cache_miss_a = 0;
   cache_miss_b = 0;
   cache_miss_c = 0;
 
-  for (int r = 0 ; r < CACHE_LEN; r++) begin //rf_reg_tmp[tag_a[0]]
-    temp_reg_a = cache_a_match_comb[r] ? rf_reg_tmp[r] : temp_reg_a;  
-   // cache_miss_a = !cache_a_match_comb[r] ? 1 : 0;
-  end
+  temp_reg_a = raddr_a_i == reg_waddr && reg_waddr != '0 ? reg_wdata : l2_rdata_A;
 
   for (int r = 0 ; r < CACHE_LEN; r++) begin //rf_reg_tmp[tag_a[0]]
-    temp_reg_b = cache_b_match_comb[r] ? rf_reg_tmp[r] : temp_reg_b;  
-   // cache_miss_a = cache_a_match_comb[r] ? 1 : 0;
+    temp_reg_b = cache_b_match_comb[r] ? rf_reg_tmp[r] : temp_reg_b;
+    cache_miss_b = cache_b_match_comb[r] ? 1 : cache_miss_b;  
   end
-
-  //if( cache_a_match == 1 )
-  //  temp_reg_a = rf_reg_tmp[tag_a[0]];
-  //else if( raddr_a_i != 0 ) begin // doesn't exist in cache
-    cache_miss_a = raddr_a_i != 0 && cache_a_match == 0 ? 1: 0;
-    cache_miss_b = raddr_b_i != 0 && cache_b_match == 0 ? 1: 0;
- // end 
-
- /* if( cache_b_match == 1 )
-    temp_reg_b =  rf_reg_tmp[tag_b[0]];
-  else if( raddr_b_i != 5'h0 ) begin // doesn't exist in cache
-    cache_miss_b = 1;
-  end
-*/
-  cache_miss_a = new_inst ? cache_miss_a : 0;
+  cache_miss_b = raddr_b_i != 0 && cache_b_match == 0 ? 1: 0;
+  //cache_miss_a = new_inst ? cache_miss_a : 0;
   cache_miss_b = new_inst && !immediate_inst_i ? cache_miss_b : 0;
+  cache_miss_b = ~fetch_l2_b ? cache_miss_b : 0;
 end
   // With dummy instructions enabled, R0 behaves as a real register but will always return 0 for
   // real instructions.
@@ -332,20 +367,7 @@ end
 
   assign rdata_a_o = raddr_a_i == 5'(0) ? rf_reg[0] : temp_reg_a;
   assign rdata_b_o = raddr_b_i == 5'(0) ? rf_reg[0] : temp_reg_b;
-  assign sig = cache_miss_a || cache_miss_b;
-  
-  // This always block ensures that sig_dly is exactly 1 clock behind sig
-  always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni)
-      sig_dly <= 0;
-    else
-      sig_dly <= sig;
-  end
-   // Combinational logic where sig is AND with delayed, inverted version of sig
-  // Assign statement assigns the evaluated expression in the RHS to the internal net pe
-  assign pe = sig & ~sig_dly;
- // assign cache_1_index[counter_a] = cache_miss_a_ && raddr_a_i != 0 ? 
- //                                   raddr_a_i : cache_1_index[counter_a];
-  assign reg_stall_o = pe;
+
+  assign reg_stall_o = cache_miss_b;//pe;
 
 endmodule

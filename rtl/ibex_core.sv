@@ -330,6 +330,8 @@ module ibex_core #(
   logic        rf_ren_b;
 `endif
 
+  logic [31:0] instr_out;
+
   //////////////////////
   // Clock management //
   //////////////////////
@@ -431,7 +433,8 @@ module ibex_core #(
 
       .if_busy_o                ( if_busy                ),
 
-      .instr_out_o              (instr_out)
+      .instr_out_o              (instr_out),
+      .instr_new_id_d_o         (instr_new_id_d)
   );
 
   // Core is waiting for the ISide when ID/EX stage is ready for a new instruction but none are
@@ -769,8 +772,9 @@ module ibex_core #(
       // hierarchy
       .reg_stall_o(reg_stall),
       .pc_id_i (pc_id),
-      .immediate_inst_i(immediate_inst)
-      ///.pref_inst_i(instr_out)
+      .immediate_inst_i(immediate_inst),
+      .pref_inst_i(instr_out),
+      .instr_new_id_d_i(instr_new_id_d)
   );
 
   // Explict INC_ASSERT block to avoid unused signal lint warnings were asserts are not included

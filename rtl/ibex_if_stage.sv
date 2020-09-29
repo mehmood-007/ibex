@@ -85,12 +85,15 @@ module ibex_if_stage #(
     // misc signals
     output logic                  if_busy_o,                 // IF stage is busy fetching instr,
 
-    output logic [31:0]           instr_out_o
+    output logic [31:0]           instr_out_o,
+
+    output logic [31:0]           instr_new_id_d_o
 );
 
   import ibex_pkg::*;
 
   assign instr_out_o = instr_out;
+  assign instr_new_id_d_o = instr_new_id_d;
 
   logic              instr_valid_id_d, instr_valid_id_q;
   logic              instr_new_id_d, instr_new_id_q;
