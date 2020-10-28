@@ -40,9 +40,9 @@ module ibex_register_file #(
     output logic reg_access_o,
 
     // reg stall
-    output logic reg_stall_o
-
-
+    output logic reg_stall_o,
+    input  logic [31:0]               pc_id_i,
+    input  logic                      immediate_inst_i
 );
   logic [31:0] reg_count [0:NUM_WORDS-1];
   
@@ -54,8 +54,7 @@ module ibex_register_file #(
   logic [31:0]  reg_stall_;
   
   parameter int CACHE_LEN = 4;
-
-
+  
   integer registers [32];
   integer cache_1 [CACHE_LEN];
   logic [CACHE_LEN-1:0][4:0] cache_1_index ;
@@ -111,7 +110,7 @@ logic write_stall_1, write_stall;
 logic [4:0] counter;
 logic [31:0] counter_;
 
-logic [$clog2(CACHE_LEN)-1:0] counter_a;
+logic [3:0] counter_a;
 logic [$clog2(CACHE_LEN)-1:0] counter_b;
 logic [$clog2(CACHE_LEN)-1:0] counter_c;
 
@@ -148,7 +147,8 @@ logic [$clog2(CACHE_LEN)-1:0] counter_c;
     registers [addr] = data;
     foreach ( cache_1_index[k] ) begin
       if( cache_1_index[k] == addr ) begin  
-        cache_1[k] = 32'(data); cache_match = 1;
+        cache_1[k] = 32'(data); 
+        cache_match = 1;
       end
         //$display("Cache hit -> tag = %d, index = %d", tag, reg_address_a);
       else cache_match = 0;
@@ -199,8 +199,16 @@ logic [31:0] cache_hit_count_;
     // counter_a <= '{default:'0};
    //  tag_a <= 0;
     end else begin
-      for (int r = 0; r < CACHE_LEN; r++) begin
+          counter_a <= waddr_a_i != 0 && we_a_dec[waddr_a_i] && 
+                       (raddr_b_i == 5'h0 || raddr_b_i == 5'h0 || raddr_b_i == 5'h1F) ? counter_a :
+                       waddr_a_i != 0 && we_a_dec[waddr_a_i] &&
+                       !cache_c_match &&
+                       counter_a != CACHE_LEN ? counter_a + 1 : 
+                       (raddr_b_i == 5'h0 || raddr_b_i == 5'h0 || raddr_b_i == 5'h1F) && counter_a != 0 ? counter_a - 1 : 
+                       counter_a;
 
+      for (int r = 0; r < CACHE_LEN; r++) begin
+/*
           if( |cache_a_match_comb == 0 && raddr_a_i != '0 && |cache_b_match_comb == 0 && raddr_b_i != '0 && raddr_b_i != 5'h1f ) begin
             counter_a <= counter_a >= CACHE_LEN-1 ? 0 : counter_a + 1;
             counter_b <= counter_a >= CACHE_LEN-1 ? 0 : counter_a + 2;
@@ -216,13 +224,12 @@ logic [31:0] cache_hit_count_;
             counter_a <= counter_b >= CACHE_LEN-1 ? 0 : counter_b + 1;
             cache_miss_count <= cache_miss_count + 1;
           end
-          else if(cache_miss_c) begin
-            counter_a <= counter_a >= CACHE_LEN-1 ? 0 : counter_a + 1;
-            cache_miss_count <= cache_miss_count + 1;
+          */
+
+           // cache_miss_count <= cache_miss_count + 1;
             //counter_a <= counter_b >= CACHE_LEN-1 ? 0 : counter_b + 1;    
-          end
-          else
-            cache_hit_count <= cache_hit_count + 1;
+          //else
+          //  cache_hit_count <= cache_hit_count + 1;
 
           cache_1_index_1[r] <= cache_1_index[r];
       end
@@ -233,11 +240,8 @@ logic [31:0] cache_hit_count_;
   generate
     for ( i = 0; i < CACHE_LEN; i++ ) begin
       assign cache_a_match_comb[i] = (cache_1_index_1[i] == raddr_a_i && raddr_a_i != '0) ? 1 : 0;
-
       assign cache_b_match_comb[i] = (cache_1_index_1[i] == raddr_b_i && raddr_b_i != '0) ? 1 : 0;
-
       assign cache_c_match_comb[i] = (cache_1_index_1[i] == waddr_a_i && we_a_dec[waddr_a_i]) ? 1 : 0;
-
     end
   endgenerate
 
@@ -256,6 +260,7 @@ always @( * ) begin
   
   cache_miss_b = 0;
   cache_miss_c = 0;
+  cache_miss_a = 0;
 
   if( cache_a_match == 1 ) begin
     temp_reg_a = cache_1[tag_a];
@@ -263,13 +268,11 @@ always @( * ) begin
   end
   else if( cache_a_match == 0 && raddr_a_i != 0  ) begin // doesn't exist in cache
     temp_reg_a = registers[raddr_a_i];
-    cache_1_index[counter_a] = raddr_a_i;
-    cache_1[counter_a] = temp_reg_a;
-    cache_miss_a = 1;
+   // cache_1_index[counter_a] = raddr_a_i;
+   // cache_1[counter_a] = temp_reg_a;
+   // cache_miss_a = 1;
     //$display( "Cache miss, addr-A %d-> %d ", reg_address_a, counter_a );
   end
-  else
-    cache_miss_a = 0;
 
   if( cache_b_match == 1 ) begin
     temp_reg_b =  cache_1[tag_b];
@@ -277,27 +280,26 @@ always @( * ) begin
 
   else if( cache_b_match == 0 && raddr_b_i != 5'h0 && raddr_b_i != 5'h1F ) begin // doesn't exist in cache
     temp_reg_b = registers[raddr_b_i];
-    cache_1_index[counter_b] = raddr_b_i;
-    cache_1[counter_b] = temp_reg_b;
-   // counter_a = counter_ >= CACHE_LEN ? '0 : counter_ + 1;
-    cache_miss_b = 1;
-    // $display( "Cache miss, addr-B %d-> %d ", reg_address_b, counter_a );
-   // counter = counter >= 1 ? 0 : counter + 1;
-  // $display( "Cache miss, stall %d, addr %d ", reg_stall[reg_address_a], reg_address_a );
-  end
-  else if(raddr_b_i == 5'h1F) begin
-     temp_reg_b = registers[raddr_b_i];
-     cache_miss_b = 0;
+   // cache_1_index[counter_b] = raddr_b_i;
+  // / cache_1[counter_b] = temp_reg_b;
   end
 
-  cache_miss_c = cache_c_match == 0 && waddr_a_i != 0 && we_a_dec[waddr_a_i] ? 1 : 0;
+  cache_miss_c = counter_a == CACHE_LEN && 
+                 waddr_a_i != 0 && 
+                 we_a_dec[waddr_a_i] &&
+                 raddr_b_i != 5'h0 && raddr_b_i != 5'h1F &&
+                 raddr_a_i != 0 ? 
+                 1 : 0;
 
-  if(cache_miss_c) begin
+  if(raddr_b_i == 5'h0 || raddr_b_i == 5'h0 || raddr_b_i == 5'h1F )
+      cache_1_index[counter_a] = 5'h0;
+
+  if( cache_miss_c || (waddr_a_i != 0 && we_a_dec[waddr_a_i]) ) begin
     cache_1_index[counter_a] = waddr_a_i;
    // cache_1[counter_a] = temp_reg_b;
   end
-  cache_miss_a = temp_addr_a != raddr_a_i ? cache_miss_a : 0;
-  cache_miss_b = temp_addr_b != raddr_b_i ? cache_miss_b : 0;
+//  cache_miss_a = temp_addr_a != raddr_a_i ? cache_miss_a : 0;
+//  cache_miss_b = temp_addr_b != raddr_b_i ? cache_miss_b : 0;
 end
 
 
@@ -372,15 +374,15 @@ end
       two_op_signal <= 0;
     end
     else begin
-    	sig_dly <= sig;
+      sig_dly <= sig;
       two_op_signal <= cache_miss_a && cache_miss_b;
     end
-	end
+  end
 
    // Combinational logic where sig is AND with delayed, inverted version of sig
   // Assign statement assigns the evaluated expression in the RHS to the internal net pe
-	assign pe = sig & ~sig_dly;
-	assign pe2 = two_op_signal;
+  assign pe = sig & ~sig_dly;
+  assign pe2 = two_op_signal;
 
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
@@ -389,15 +391,15 @@ end
       shift_2 <= 0;
     end
     else begin
-    	shift_1 <= write_stall_1;
+      shift_1 <= write_stall_1;
       shift_2 <= shift_1;
     end
-	end
+  end
 
   assign write_stall_o =  pe ? shift_1 :
                           pe2 ? shift_2 : write_stall_1;
 
-  assign reg_stall_o = 0;//pe || pe2 || write_stall_o;
+  assign reg_stall_o = pe || pe2 || write_stall_o;
   assign reg_access_o = reg_access;
 
 endmodule​
